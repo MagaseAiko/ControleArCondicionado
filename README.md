@@ -81,6 +81,8 @@ A aba **CONFIG → Modo demo** simula o receptor, para testar a página sem hard
 
 Se a detecção não funcionar, escolha o protocolo em **CONFIG → Protocolo do ar**.
 
+**Ar Elgin:** a Elgin não tem protocolo próprio. Ela usa o protocolo do fabricante de cada modelo (Midea/Coolix, Gree, AUX, TCL, Haier...). Em **CONFIG → Assistente Elgin**, toque em TESTAR em cada candidato até o ar responder e depois em USAR. Esses protocolos também aparecem primeiro na lista de protocolos.
+
 ### Modo APRENDIDO (qualquer ar, inclusive protocolo desconhecido)
 
 Cada botão da página procura um sinal gravado com um nome padrão. Grave pela aba **GRAVAR → Mapa de funções**:

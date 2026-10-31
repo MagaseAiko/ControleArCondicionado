@@ -346,6 +346,15 @@
     </div>
 
     <div class="panel">
+      <h2>ASSISTENTE ELGIN <span class="tag">piso-teto</span></h2>
+      <p class="hint">A Elgin usa protocolos de outros fabricantes, conforme o modelo. O jeito mais garantido é gravar um botão do controle original (aba GRAVAR). Sem o controle, teste os candidatos abaixo: cada TESTAR envia <b>LIGAR · FRIO · 23° · VENT AUTO</b>. Quando o ar bipar ou ligar, toque em USAR.</p>
+      <ul class="sig-list" id="elginList"><li class="empty">Conecte ao receptor para listar</li></ul>
+      <div class="row" style="margin-top:8px">
+        <button class="grow" id="btnElginOff">Enviar DESLIGAR com o último testado</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <h2>PROTOCOLO DO AR <span class="tag" id="cfgProtoTag">—</span></h2>
       <p class="hint">Grave qualquer botão do controle original: se o protocolo for reconhecido ele é configurado sozinho. Ou escolha abaixo.</p>
       <label class="lbl" for="protoSelect">PROTOCOLO</label>
@@ -548,7 +557,7 @@ class DemoLink {
   constructor(onMsg, onClose) {
     this.name = 'DEMO (simulado)';
     this.onMsg = onMsg; this.onClose = onClose;
-    this.protos = ['COOLIX','DAIKIN','ELECTRA_AC','FUJITSU_AC','GREE','HAIER_AC','LG','MIDEA','MITSUBISHI_AC','PANASONIC_AC','SAMSUNG_AC','TCL112AC','TOSHIBA_AC','WHIRLPOOL_AC']
+    this.protos = ['CARRIER_AC64','COOLIX','DAIKIN','ELECTRA_AC','FUJITSU_AC','GREE','HAIER_AC','HAIER_AC_YRW02','KELON','LG','MIDEA','MITSUBISHI_AC','PANASONIC_AC','SAMSUNG_AC','TCL112AC','TECO','TOSHIBA_AC','WHIRLPOOL_AC']
       .map((n, i) => ({ id: 10 + i, n }));
     this.s = {
       t: 'status', fw: 'demo', tr: 'demo', learnedMode: false, proto: 'SAMSUNG_AC', protoId: 20, model: -1, protoOk: true,
@@ -576,6 +585,7 @@ class DemoLink {
       case 'protocols': this.emit({ t: 'protocols', list: this.protos }); break;
       case 'ac': Object.assign(this.s.ac, o.ac); this.status(); if (this.s.learnedMode || this.s.protoOk) this.sent(this.s.learnedMode ? 'aprendido' : 'ar'); break;
       case 'resend': this.sent('ar'); break;
+      case 'tryProto': this.sent('ar'); break;
       case 'learn':
         this.s.learning = { active: true, key: o.key || 'rapido', left: 15000 }; this.status();
         clearTimeout(this.learnTimer);
@@ -643,6 +653,7 @@ async function connect(kind) {
     await link.open();
     app.link = link;
     link.send({ c: 'hello' });
+    link.send({ c: 'protocols' });
     toast('Conectado: ' + link.name, 'ok');
   } catch (e) {
     console.warn(e);
@@ -911,11 +922,52 @@ async function mapAction(key) {
 }
 
 // ---------------------------------------------------------------- config
+// Protocolos mais encontrados em aparelhos Elgin (fabricados por OEMs como
+// Midea, Gree, AUX, TCL, Haier), em ordem de probabilidade.
+const ELGIN_CANDIDATES = [
+  ['COOLIX', 'Midea/Coolix: comum em piso-teto e cassete'],
+  ['MIDEA', 'Midea (controles RG57/RG66)'],
+  ['GREE', 'Gree (controles YAP/YB1F)'],
+  ['ELECTRA_AC', 'AUX (controles YKR-H/YKR-K)'],
+  ['SAMSUNG_AC', 'já relatado em Elgin'],
+  ['TCL112AC', 'TCL'],
+  ['HAIER_AC', 'Haier'],
+  ['HAIER_AC_YRW02', 'Haier (YR-W02)'],
+  ['KELON', 'Kelon/Hisense'],
+  ['CARRIER_AC64', 'Carrier/Springer'],
+  ['TECO', 'Teco'],
+  ['LG', 'LG'],
+];
+const ELGIN_TEST_STATE = { power: true, mode: 'cool', temp: 23, fan: 'auto', swingv: 'auto' };
+let elginLastTried = -1;
+
+function elginProtocols() {
+  return ELGIN_CANDIDATES.map(([n, desc]) => ({ p: app.protocols.find(p => p.n === n), desc })).filter(c => c.p);
+}
+
 function renderProtocols() {
   const sel = $('#protoSelect');
+  const elgin = elginProtocols().map(c => c.p);
+  const others = app.protocols.filter(p => !elgin.includes(p));
+  const opts = list => list.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join('');
   sel.innerHTML = '<option value="-1">— nenhum (usar modo aprendido) —</option>'
-    + app.protocols.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join('');
+    + `<optgroup label="Prováveis para Elgin">${opts(elgin)}</optgroup>`
+    + `<optgroup label="Outros">${opts(others)}</optgroup>`;
   if (app.dev) sel.value = String(app.dev.protoId);
+  renderElgin();
+}
+
+function renderElgin() {
+  const list = $('#elginList');
+  const cands = elginProtocols();
+  if (!cands.length) { list.innerHTML = '<li class="empty">Conecte ao receptor para listar</li>'; return; }
+  const current = app.dev ? app.dev.protoId : -1;
+  list.innerHTML = cands.map(({ p, desc }) => `
+    <li>
+      <div class="sig-name"><b>${current === p.id ? '✓ ' : ''}${esc(p.n)}</b><small>${esc(desc)}</small></div>
+      <button class="small" data-try="${p.id}">Testar</button>
+      <button class="small dark" data-use="${p.id}">Usar</button>
+    </li>`).join('');
 }
 
 function renderConfig() {
@@ -934,6 +986,7 @@ function renderConfig() {
     if (app.protocols.length) $('#protoSelect').value = String(d.protoId);
     if (document.activeElement !== $('#protoModel')) $('#protoModel').value = d.model;
   }
+  renderElgin();
   $('#btnDemo').textContent = app.link instanceof DemoLink ? 'Sair do demo' : 'Modo demo';
   $('#btnDemo').disabled = !!app.link && !(app.link instanceof DemoLink);
 }
@@ -988,6 +1041,21 @@ function setup() {
     send({ c: 'setProto', id: parseInt($('#protoSelect').value, 10), model: isNaN(model) ? -1 : model }) && toast('Protocolo salvo');
   };
   $('#btnReloadProto').onclick = () => send({ c: 'protocols' });
+  $('#elginList').onclick = e => {
+    const tryBtn = e.target.closest('button[data-try]');
+    const useBtn = e.target.closest('button[data-use]');
+    if (tryBtn) {
+      elginLastTried = parseInt(tryBtn.dataset.try, 10);
+      send({ c: 'tryProto', id: elginLastTried, ac: ELGIN_TEST_STATE }) && toast('Testando ' + tryBtn.closest('li').querySelector('b').textContent + '…');
+    }
+    if (useBtn) {
+      send({ c: 'setProto', id: parseInt(useBtn.dataset.use, 10), model: -1 }) && toast('Protocolo configurado!', 'ok');
+    }
+  };
+  $('#btnElginOff').onclick = () => {
+    if (elginLastTried < 0) return toast('Teste um protocolo primeiro');
+    send({ c: 'tryProto', id: elginLastTried, ac: { power: false } });
+  };
 
   // Avisos de compatibilidade
   const banner = $('#compatBanner');

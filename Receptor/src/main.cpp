@@ -629,6 +629,21 @@ static void handleMessage(const String &line) {
     return sendStatus();
   }
 
+  // Assistente de protocolo: envia um estado de teste sem alterar a configuração
+  if (c == "tryProto") {
+    const int id = doc["id"] | -1;
+    if (id < 0 || !IRac::isProtocolSupported((decode_type_t)id)) {
+      notifyError("Protocolo nao suportado");
+      return;
+    }
+    stdAc::state_t test = ac;
+    test.protocol = (decode_type_t)id;
+    test.model = doc["model"] | -1;
+    acMergeJson(doc["ac"].as<JsonObjectConst>(), test);
+    queueAc(test);
+    return;
+  }
+
   if (c == "setMode") {
     learnedMode = doc["learned"] | false;
     markDirty();
