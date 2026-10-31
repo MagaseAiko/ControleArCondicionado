@@ -82,6 +82,38 @@ static void sendHello() {
   esp_now_send(BROADCAST, (uint8_t *)&m, sizeof(m));
 }
 
+#if SEND_WHIRLPOOL_AC
+// Whirlpool/Consul: o sinal leva o "botão" apertado e o liga/desliga é de
+// alternar. Montamos o sinal como o controle original faria.
+static bool sendWhirlpool(const stdAc::state_t &st, bool prevPower, uint8_t cmd) {
+  IRWhirlpoolAc w(IR_LED_PIN);
+  w.begin();
+  w.setModel((whirlpool_ac_remote_model_t)st.model);
+  w.setMode(w.convertMode(st.mode));
+  w.setTemp((uint8_t)lroundf(st.degrees));
+  w.setFan(w.convertFan(st.fanspeed));
+  w.setSwing(st.swingv != stdAc::swingv_t::kOff);
+  w.setSuper(st.turbo);
+  w.setLight(st.light);
+  w.setSleep(st.sleep >= 0);
+  w.setPowerToggle(st.power != prevPower);
+  switch (cmd) {
+    case AC_CMD_MODE:
+      w.setCommand(st.mode == stdAc::opmode_t::kAuto ? kWhirlpoolAcCommand6thSense : kWhirlpoolAcCommandMode);
+      break;
+    case AC_CMD_TEMP: w.setCommand(kWhirlpoolAcCommandTemp); break;
+    case AC_CMD_FAN: w.setCommand(kWhirlpoolAcCommandFanSpeed); break;
+    case AC_CMD_SWING: w.setCommand(kWhirlpoolAcCommandSwing); break;
+    case AC_CMD_TURBO: w.setCommand(kWhirlpoolAcCommandSuper); break;
+    case AC_CMD_SLEEP: w.setCommand(kWhirlpoolAcCommandSleep); break;
+    case AC_CMD_LIGHT: w.setCommand(kWhirlpoolAcCommandLight); break;
+    default: w.setCommand(kWhirlpoolAcCommandPower); break;  // energia ou reenvio
+  }
+  w.send();
+  return true;
+}
+#endif
+
 static void handleAc(RxPacket &p, uint16_t seq) {
   if (p.len < sizeof(LinkAc)) return reply(p.mac, seq, LINK_ERR_BAD_PACKET);
   LinkAc m;
@@ -90,10 +122,17 @@ static void handleAc(RxPacket &p, uint16_t seq) {
   linkUnpackAc(m, st);
   bool ok = IRac::isProtocolSupported(st.protocol);
   if (ok) {
+    const bool prevPower = m.flags & AC_F_PREV_POWER;
+    const uint8_t cmd = (m.flags & AC_F_CMD_MASK) >> AC_F_CMD_SHIFT;
+#if SEND_WHIRLPOOL_AC
+    if ((m.flags & AC_F_HAS_PREV) && st.protocol == decode_type_t::WHIRLPOOL_AC) {
+      ok = sendWhirlpool(st, prevPower, cmd);
+    } else
+#endif
     if (m.flags & AC_F_HAS_PREV) {
       // O receptor sabe o estado anterior: usa ele para os bits de "alternar"
       stdAc::state_t prev = st;
-      prev.power = m.flags & AC_F_PREV_POWER;
+      prev.power = prevPower;
       ok = irac.sendAc(st, &prev);
     } else {
       irac.next = st;

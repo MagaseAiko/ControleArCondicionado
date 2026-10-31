@@ -32,3 +32,8 @@
 #define IR_CAPTURE_BUFFER 1024
 #define IR_TIMEOUT_MS 50               // controles de ar mandam mensagens longas
 #define IR_MIN_UNKNOWN_LEN 12          // abaixo disso é ruído
+
+// Protocolo de fábrica: Consul CBK12BXNA (Whirlpool). Gravar um botão do
+// controle original troca para o protocolo/modelo detectado.
+#define DEFAULT_AC_PROTOCOL decode_type_t::WHIRLPOOL_AC
+#define DEFAULT_AC_MODEL 2             // whirlpool_ac_remote_model_t: 1 = DG11J1-3A/04, 2 = DG11J1-91

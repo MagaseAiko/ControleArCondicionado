@@ -26,6 +26,19 @@ inline void linkPackAc(const stdAc::state_t &s, LinkAc &m) {
   if (s.beep) m.flags |= AC_F_BEEP;
 }
 
+// Descobre qual "botão" o usuário apertou comparando o estado anterior com o novo.
+inline LinkAcCmd linkAcCommand(const stdAc::state_t &prev, const stdAc::state_t &next) {
+  if (prev.power != next.power) return AC_CMD_POWER;
+  if (prev.mode != next.mode) return AC_CMD_MODE;
+  if (lroundf(prev.degrees * 10) != lroundf(next.degrees * 10)) return AC_CMD_TEMP;
+  if (prev.fanspeed != next.fanspeed) return AC_CMD_FAN;
+  if (prev.swingv != next.swingv) return AC_CMD_SWING;
+  if (prev.turbo != next.turbo) return AC_CMD_TURBO;
+  if ((prev.sleep >= 0) != (next.sleep >= 0)) return AC_CMD_SLEEP;
+  if (prev.light != next.light) return AC_CMD_LIGHT;
+  return AC_CMD_NONE;
+}
+
 inline void linkUnpackAc(const LinkAc &m, stdAc::state_t &s) {
   IRac::initState(&s);
   s.protocol = (decode_type_t)m.protocol;

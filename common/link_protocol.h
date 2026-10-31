@@ -59,6 +59,21 @@ struct __attribute__((packed)) LinkHello {
 // alterna só quando o estado anterior é diferente do desejado.
 #define AC_F_HAS_PREV (1 << 9)
 #define AC_F_PREV_POWER (1 << 10)
+// Bits 11..14: qual "botão" mudou neste envio (LinkAcCmd). Alguns protocolos
+// (Whirlpool/Consul) mandam essa informação no sinal, como o controle original.
+#define AC_F_CMD_SHIFT 11
+#define AC_F_CMD_MASK (0xF << AC_F_CMD_SHIFT)
+enum LinkAcCmd : uint8_t {
+  AC_CMD_NONE = 0,
+  AC_CMD_POWER,
+  AC_CMD_MODE,
+  AC_CMD_TEMP,
+  AC_CMD_FAN,
+  AC_CMD_SWING,
+  AC_CMD_TURBO,
+  AC_CMD_SLEEP,
+  AC_CMD_LIGHT,
+};
 
 struct __attribute__((packed)) LinkAc {
   LinkHeader h;

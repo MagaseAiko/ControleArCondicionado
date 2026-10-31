@@ -84,7 +84,7 @@ Se a detecção não funcionar, escolha o protocolo em **CONFIG → Protocolo do
 **Assistente de marca (Elgin / Consul):** em **CONFIG → Assistente de marca**, escolha a marca e toque em TESTAR em cada candidato até o ar responder; depois toque em USAR. Os protocolos da marca escolhida também aparecem primeiro na lista de protocolos.
 
 - **Elgin:** não tem protocolo próprio. Usa o do fabricante de cada modelo (Midea/Coolix, Gree, AUX, TCL, Haier...).
-- **Consul:** é da Whirlpool, então o primeiro candidato é o `WHIRLPOOL_AC`: modelo 1 para os controles DG11J1-3A/DG11J1-04, modelo 2 para o DG11J1-91. Nesse protocolo, o liga/desliga alterna o estado em vez de definir. Se o ar ficar com o estado trocado, toque em LIGA/DESLIGA de novo.
+- **Consul:** é da Whirlpool. O receptor já vem configurado para o **Consul CBK12BXNA** (controle W11683858): `WHIRLPOOL_AC`, modelo 2 (DG11J1-91, 16–30°). Use o modelo 1 (DG11J1-3A/04, 18–32°) se a temperatura no display não bater com a da página. Gravar um botão do controle original corrige o protocolo e o modelo sozinho, se forem outros. Nesse protocolo o liga/desliga alterna o estado, e cada sinal leva o "botão" que mudou (temperatura, modo, ventilação...), como o controle original. Se o ar ficar com o estado trocado, toque em LIGA/DESLIGA de novo.
 
 ### Modo APRENDIDO (qualquer ar, inclusive protocolo desconhecido)
 

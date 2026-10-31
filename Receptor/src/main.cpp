@@ -50,7 +50,7 @@ enum class JobKind : uint8_t { Ac, Signal, Ping };
 struct Job {
   JobKind kind;
   stdAc::state_t ac;
-  bool prevPower = false;  // energia antes deste envio (protocolos com "alternar")
+  stdAc::state_t prev;     // estado antes deste envio (protocolos com "alternar")
   String key;
 };
 static std::deque<Job> jobs;
@@ -198,6 +198,10 @@ static void sendProtocols() {
 
 // ---------------------------------------------------------------- persistência
 
+// Protocolo escolhido à mão em CONFIG. Enquanto for falso (protocolo padrão),
+// gravar um botão do controle original troca para o protocolo detectado.
+static bool protoUser = false;
+
 static void markDirty() {
   stateDirty = true;
   stateDirtySince = millis();
@@ -208,6 +212,7 @@ static void saveState() {
   linkPackAc(ac, packed);
   prefs.putBytes("ac", &packed, sizeof(packed));
   prefs.putBool("learned", learnedMode);
+  prefs.putBool("protoUser", protoUser);
   stateDirty = false;
 }
 
@@ -217,7 +222,8 @@ static void loadState() {
     linkUnpackAc(packed, ac);
   } else {
     IRac::initState(&ac);
-    ac.protocol = decode_type_t::UNKNOWN;
+    ac.protocol = DEFAULT_AC_PROTOCOL;
+    ac.model = DEFAULT_AC_MODEL;
     ac.power = false;
     ac.mode = stdAc::opmode_t::kCool;
     ac.degrees = 24;
@@ -226,6 +232,7 @@ static void loadState() {
     ac.swingh = stdAc::swingh_t::kOff;
   }
   learnedMode = prefs.getBool("learned", false);
+  protoUser = prefs.getBool("protoUser", false);
 }
 
 // ---------------------------------------------------------------- fila de envios
@@ -265,11 +272,11 @@ static void queueSignal(const String &key) {
   queueJob(job);
 }
 
-static void queueAc(const stdAc::state_t &state, bool prevPower) {
+static void queueAc(const stdAc::state_t &state, const stdAc::state_t &prev) {
   Job job;
   job.kind = JobKind::Ac;
   job.ac = state;
-  job.prevPower = prevPower;
+  job.prev = prev;
   queueJob(job);
 }
 
@@ -281,7 +288,7 @@ static void startJob(const Job &job) {
   uint16_t seq = 0;
   bool usedCode = false;
   switch (job.kind) {
-    case JobKind::Ac: seq = linkSendAc(job.ac, job.prevPower); break;
+    case JobKind::Ac: seq = linkSendAc(job.ac, job.prev); break;
     case JobKind::Ping: seq = linkPing(); break;
     case JobKind::Signal: {
       Signal sig;
@@ -502,10 +509,12 @@ static void finishLearning() {
   // Protocolo de ar suportado: habilita o controle completo automaticamente
   const bool acCapable = sig.hasCode && IRac::isProtocolSupported(type);
   bool autoSet = false;
-  if (acCapable && ac.protocol == decode_type_t::UNKNOWN) {
+  // (também atualiza o modelo quando é o mesmo protocolo, ex.: Whirlpool DG11J1-3A x DG11J1-91)
+  if (acCapable && (!protoUser || ac.protocol == decode_type_t::UNKNOWN || ac.protocol == type)) {
     stdAc::state_t decoded;
     if (IRAcUtils::decodeToState(&results, &decoded, &ac)) ac = decoded;
     ac.protocol = type;
+    protoUser = true;  // veio do controle original: não troca mais sozinho
     autoSet = true;
     markDirty();
   }
@@ -574,7 +583,7 @@ static void handleMessage(const String &line) {
     if (learnedMode) {
       queueLearnedChange(ac, next);
     } else if (protocolReady()) {
-      queueAc(next, ac.power);
+      queueAc(next, ac);
     } else {
       notifyError("Defina o protocolo do ar (CONFIG) ou use o modo APRENDIDO");
     }
@@ -585,7 +594,7 @@ static void handleMessage(const String &line) {
 
   if (c == "resend") {
     if (!learnedMode) {
-      if (protocolReady()) queueAc(ac, ac.power);
+      if (protocolReady()) queueAc(ac, ac);
       else notifyError("Protocolo do ar nao definido");
     } else {
       const String combo = String(acModeName(ac.mode)) + "_" + String(lroundf(ac.degrees));
@@ -626,6 +635,7 @@ static void handleMessage(const String &line) {
     }
     ac.protocol = (decode_type_t)id;
     ac.model = doc["model"] | -1;
+    protoUser = true;
     if (id >= 0) learnedMode = false;
     markDirty();
     return sendStatus();
@@ -644,7 +654,9 @@ static void handleMessage(const String &line) {
     acMergeJson(doc["ac"].as<JsonObjectConst>(), test);
     // No teste não sabemos se o ar está ligado: força a troca de energia
     // (em protocolos com "alternar", LIGAR e DESLIGAR enviam o bit de alternar)
-    queueAc(test, !test.power);
+    stdAc::state_t prev = test;
+    prev.power = !test.power;
+    queueAc(test, prev);
     return;
   }
 
