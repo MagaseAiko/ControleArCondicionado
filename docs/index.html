@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C9B8F5">
+<title>AR-CTRL 2000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --base: #C9B8F5;
+    --base-2: #B8A3EF;
+    --light: #EEE8FD;
+    --ink: #2B1D4E;
+    --deep: #5B3FA8;
+    --lcd: #1C1236;
+    --lcd-on: #D8CBFF;
+    --lcd-dim: #4A3A78;
+    --pink: #F59BC8;
+    --ok: #7FE0B0;
+    --warn: #FFD27A;
+    --err: #FF8A8A;
+    --px: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+    --mono: 'VT323', ui-monospace, 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background-color: var(--base);
+    background-image:
+      linear-gradient(45deg, rgba(43,29,78,.06) 25%, transparent 25%, transparent 75%, rgba(43,29,78,.06) 75%),
+      linear-gradient(45deg, rgba(43,29,78,.06) 25%, transparent 25%, transparent 75%, rgba(43,29,78,.06) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 8px 8px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 22px;
+    line-height: 1.15;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left);
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 12px; }
+
+  /* ---------- barra superior ---------- */
+  header.top {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--ink); color: var(--base);
+    border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--deep);
+    padding: 10px 12px; margin-bottom: 12px;
+  }
+  .logo { font-family: var(--px); font-size: 13px; letter-spacing: 1px; flex: 1; line-height: 1.5; }
+  .logo small { display: block; font-family: var(--mono); font-size: 16px; color: var(--base-2); letter-spacing: 0; }
+  .led { width: 14px; height: 14px; border: 2px solid var(--base); background: var(--lcd-dim); flex: none; }
+  .led.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .led.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+
+  /* ---------- botões ---------- */
+  button, .btn {
+    font-family: var(--px); font-size: 11px; line-height: 1.4;
+    color: var(--ink); background: var(--light);
+    border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+    padding: 10px 12px; cursor: pointer; text-transform: uppercase;
+    user-select: none; touch-action: manipulation;
+  }
+  button:active, button.pressed { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+  button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--ink); }
+  button.dark { background: var(--ink); color: var(--base); box-shadow: 3px 3px 0 var(--deep); }
+  button.accent { background: var(--deep); color: var(--light); }
+  button.pink { background: var(--pink); }
+  button.small { font-size: 9px; padding: 7px 8px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
+  button.small:active { transform: translate(2px, 2px); }
+  button.sel { background: var(--ink); color: var(--base); }
+  header.top button { background: var(--base); font-size: 10px; padding: 8px 10px; box-shadow: 3px 3px 0 var(--deep); }
+
+  /* ---------- abas ---------- */
+  nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  nav.tabs button { padding: 10px 4px; font-size: 10px; }
+  nav.tabs button.active { background: var(--ink); color: var(--base); transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+  section.tab { display: none; }
+  section.tab.active { display: block; }
+
+  /* ---------- painéis ---------- */
+  .panel {
+    background: var(--light); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+    padding: 12px; margin-bottom: 16px;
+  }
+  .panel h2 {
+    font-family: var(--px); font-size: 11px; margin: -12px -12px 12px; padding: 8px 12px;
+    background: var(--base); border-bottom: 3px solid var(--ink); letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .panel h2 .tag { font-family: var(--mono); font-size: 18px; letter-spacing: 0; }
+  .hint { font-size: 19px; color: var(--deep); margin: 6px 0; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .grow { flex: 1; }
+  label.lbl { font-family: var(--px); font-size: 9px; display: block; margin: 12px 0 6px; letter-spacing: 1px; }
+  input, select {
+    font-family: var(--mono); font-size: 22px; color: var(--ink);
+    background: #fff; border: 3px solid var(--ink); padding: 6px 8px; width: 100%;
+    border-radius: 0; box-shadow: inset 3px 3px 0 rgba(43,29,78,.15);
+  }
+  input:focus, select:focus { outline: 3px dashed var(--deep); outline-offset: 2px; }
+
+  /* ---------- controle remoto ---------- */
+  .remote {
+    background: linear-gradient(var(--base-2), var(--base));
+    border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+    padding: 14px; margin-bottom: 16px; position: relative;
+  }
+  .remote::before {
+    content: 'AR-CTRL 2000'; font-family: var(--px); font-size: 8px; letter-spacing: 2px;
+    position: absolute; top: -11px; left: 14px; background: var(--ink); color: var(--base); padding: 4px 8px;
+  }
+  .lcd {
+    background: var(--lcd); color: var(--lcd-on); border: 3px solid var(--ink);
+    box-shadow: inset 0 0 0 3px #0e0920, inset 0 0 24px rgba(201,184,245,.15);
+    padding: 10px 12px; position: relative; overflow: hidden; margin-bottom: 14px;
+    text-shadow: 0 0 6px rgba(216,203,255,.55);
+  }
+  .lcd::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  }
+  .lcd.off { color: var(--lcd-dim); text-shadow: none; }
+  .lcd-top, .lcd-bottom { display: flex; justify-content: space-between; font-family: var(--px); font-size: 9px; gap: 6px; }
+  .lcd-mid { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 8px 0; }
+  .lcd-temp { font-family: var(--px); font-size: 54px; letter-spacing: 2px; }
+  .lcd-unit { font-family: var(--px); font-size: 16px; align-self: flex-start; margin-top: 8px; }
+  .lcd-flags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--px); font-size: 8px; min-height: 12px; }
+  .lcd-flags span { opacity: .18; }
+  .lcd-flags span.on { opacity: 1; }
+  .bars { letter-spacing: -1px; }
+
+  .power-row { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 10px; align-items: stretch; margin-bottom: 14px; }
+  .power-row button { font-size: 22px; padding: 14px 0; }
+  #btnPower { background: var(--pink); font-size: 12px; }
+  #btnPower.on { background: var(--ok); }
+  .group { margin-top: 10px; }
+  .group-title { font-family: var(--px); font-size: 8px; margin-bottom: 6px; letter-spacing: 1px; }
+  .chips { display: grid; gap: 6px; }
+  .chips.c5 { grid-template-columns: repeat(5, 1fr); }
+  .chips.c6 { grid-template-columns: repeat(3, 1fr); }
+  .chips.c4 { grid-template-columns: repeat(4, 1fr); }
+  .chips button { font-size: 8px; padding: 9px 2px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
+  .chips button:active { transform: translate(2px, 2px); box-shadow: none; }
+  .ctrl-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+  .ctrl-foot .hint { margin: 0; }
+
+  /* ---------- sinais ---------- */
+  .sig-list { list-style: none; padding: 0; margin: 0; }
+  .sig-list li {
+    display: flex; align-items: center; gap: 8px; padding: 8px 0;
+    border-bottom: 2px dashed var(--base-2);
+  }
+  .sig-list li:last-child { border-bottom: none; }
+  .sig-name { flex: 1; min-width: 0; }
+  .sig-name b { display: block; font-weight: normal; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sig-name small { color: var(--deep); font-size: 17px; }
+  .empty { text-align: center; color: var(--deep); padding: 14px 0; }
+
+  details.map { border: 2px solid var(--ink); margin-bottom: 8px; background: #fff; }
+  details.map summary {
+    font-family: var(--px); font-size: 9px; padding: 10px; cursor: pointer; list-style: none;
+    display: flex; justify-content: space-between; background: var(--base);
+  }
+  details.map summary::-webkit-details-marker { display: none; }
+  details.map summary::before { content: '▶'; margin-right: 8px; }
+  details.map[open] summary::before { content: '▼'; }
+  details.map summary span:first-child { flex: 1; }
+  .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; padding: 8px; }
+  .map-grid button { font-family: var(--mono); font-size: 18px; text-transform: none; padding: 6px 4px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
+  .map-grid button.ok { background: var(--ok); }
+  .map-grid button.ok::before { content: '✓ '; }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 20px; }
+  .kv dt { color: var(--deep); }
+  .kv dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .banner {
+    border: 3px solid var(--ink); background: var(--warn); padding: 10px 12px; margin-bottom: 12px;
+    box-shadow: 4px 4px 0 var(--ink); font-size: 19px;
+  }
+  .banner b { font-family: var(--px); font-size: 9px; display: block; margin-bottom: 4px; }
+  .banner.info { background: var(--light); }
+  [hidden] { display: none !important; }
+
+  /* ---------- sobreposições ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(28,18,54,.72); z-index: 20;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .dialog {
+    width: 100%; max-width: 420px; background: var(--light);
+    border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink);
+  }
+  .dialog h3 { font-family: var(--px); font-size: 11px; margin: 0; padding: 10px 12px; background: var(--base); border-bottom: 3px solid var(--ink); }
+  .dialog .body { padding: 14px 12px; }
+  .dialog .actions { display: flex; gap: 8px; justify-content: flex-end; padding: 0 12px 14px; flex-wrap: wrap; }
+  .scan {
+    font-family: var(--px); font-size: 34px; text-align: center; padding: 14px 0; color: var(--deep);
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: .25; } }
+  .progress { height: 16px; border: 3px solid var(--ink); background: #fff; margin-top: 8px; }
+  .progress div { height: 100%; background: repeating-linear-gradient(90deg, var(--deep) 0 8px, var(--base) 8px 10px); transition: width .25s linear; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(150%);
+    background: var(--ink); color: var(--base); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--deep);
+    padding: 10px 14px; font-size: 20px; max-width: calc(100% - 24px); z-index: 30;
+    transition: transform .2s steps(4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.err { background: var(--err); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+  #toast.ok { background: var(--ok); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+
+  .busy-dot { display: inline-block; width: 10px; height: 10px; background: var(--deep); margin-left: 6px; animation: blink .6s steps(2) infinite; vertical-align: middle; }
+  footer { text-align: center; font-size: 17px; color: var(--deep); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="led" id="connLed"></div>
+    <div class="logo">AR-CTRL 2000<small id="connText">desconectado</small></div>
+    <button id="btnConnect">Conectar</button>
+  </header>
+
+  <div class="banner" id="compatBanner" hidden></div>
+
+  <nav class="tabs">
+    <button data-tab="control" class="active">Controle</button>
+    <button data-tab="learn">Gravar</button>
+    <button data-tab="config">Config</button>
+  </nav>
+
+  <!-- ================= CONTROLE ================= -->
+  <section class="tab active" id="tab-control">
+    <div class="banner info" id="modeBanner" hidden></div>
+
+    <div class="remote">
+      <div class="lcd off" id="lcd">
+        <div class="lcd-top"><span id="lcdMode">AUTO</span><span id="lcdFan">VENT AUTO</span></div>
+        <div class="lcd-mid"><span class="lcd-temp" id="lcdTemp">--</span><span class="lcd-unit">°C</span></div>
+        <div class="lcd-bottom"><span id="lcdSwing">SWING OFF</span><span id="lcdSwingH"></span></div>
+        <div class="lcd-flags" id="lcdFlags" style="margin-top:8px"></div>
+      </div>
+
+      <div class="power-row">
+        <button id="btnTempDown" aria-label="Diminuir temperatura">−</button>
+        <button id="btnPower">Power</button>
+        <button id="btnTempUp" aria-label="Aumentar temperatura">+</button>
+      </div>
+
+      <div class="group">
+        <div class="group-title">MODO</div>
+        <div class="chips c5" id="chipsMode"></div>
+      </div>
+      <div class="group">
+        <div class="group-title">VENTILAÇÃO</div>
+        <div class="chips c6" id="chipsFan"></div>
+      </div>
+      <div class="group">
+        <div class="group-title">ALETA VERTICAL</div>
+        <div class="chips c4" id="chipsSwingV"></div>
+      </div>
+      <div class="group">
+        <div class="group-title">ALETA HORIZONTAL</div>
+        <div class="chips c4" id="chipsSwingH"></div>
+      </div>
+      <div class="group">
+        <div class="group-title">FUNÇÕES</div>
+        <div class="chips c4" id="chipsExtra"></div>
+      </div>
+    </div>
+
+    <div class="ctrl-foot">
+      <p class="hint" id="ctrlInfo">—</p>
+      <button class="small" id="btnResend">Reenviar</button>
+    </div>
+  </section>
+
+  <!-- ================= GRAVAR ================= -->
+  <section class="tab" id="tab-learn">
+    <div class="panel">
+      <h2>NOVA GRAVAÇÃO <span class="tag">universal</span></h2>
+      <label class="lbl" for="learnFunc">FUNÇÃO DO AR (OPCIONAL)</label>
+      <select id="learnFunc"></select>
+      <label class="lbl" for="learnName">NOME DO SINAL</label>
+      <input id="learnName" placeholder="ex.: tv_liga" maxlength="24" autocomplete="off" autocapitalize="off">
+      <p class="hint">Aponte o controle original para o receptor IR e aperte o botão depois de clicar em GRAVAR.</p>
+      <div class="row"><button class="dark grow" id="btnLearn">● Gravar</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>SINAIS SALVOS <span class="tag" id="sigCount">0</span></h2>
+      <ul class="sig-list" id="sigList"></ul>
+    </div>
+
+    <div class="panel">
+      <h2>MAPA DE FUNÇÕES <span class="tag" id="mapCount">0</span></h2>
+      <p class="hint">Usado no modo APRENDIDO: cada botão do controle desta página procura o sinal com o nome correspondente. Toque numa função para gravar. ✓ = já gravado.</p>
+      <div id="mapGroups"></div>
+    </div>
+  </section>
+
+  <!-- ================= CONFIG ================= -->
+  <section class="tab" id="tab-config">
+    <div class="panel">
+      <h2>CONEXÃO</h2>
+      <dl class="kv">
+        <dt>Estado</dt><dd id="cfgConn">desconectado</dd>
+        <dt>Via</dt><dd id="cfgVia">—</dd>
+        <dt>Firmware</dt><dd id="cfgFw">—</dd>
+      </dl>
+      <div class="row" style="margin-top:12px">
+        <button class="grow" id="btnDemo">Modo demo</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>EMISSOR <span class="tag" id="cfgEmitterTag">—</span></h2>
+      <dl class="kv">
+        <dt>Pareado</dt><dd id="cfgPaired">—</dd>
+        <dt>MAC</dt><dd id="cfgMac">—</dd>
+        <dt>Firmware</dt><dd id="cfgEmFw">—</dd>
+      </dl>
+      <div class="row" style="margin-top:12px">
+        <button class="grow" id="btnPing">Testar</button>
+        <button class="grow pink" id="btnUnpair">Esquecer</button>
+      </div>
+      <p class="hint">Ao esquecer, o receptor pareia com o próximo emissor que ligar.</p>
+    </div>
+
+    <div class="panel">
+      <h2>MODO DE CONTROLE</h2>
+      <div class="seg">
+        <button id="btnModeProto">Protocolo</button>
+        <button id="btnModeLearned">Aprendido</button>
+      </div>
+      <p class="hint"><b>PROTOCOLO</b>: o receptor gera o sinal completo do ar (precisa do protocolo).<br><b>APRENDIDO</b>: usa os sinais gravados no MAPA DE FUNÇÕES.</p>
+    </div>
+
+    <div class="panel">
+      <h2>PROTOCOLO DO AR <span class="tag" id="cfgProtoTag">—</span></h2>
+      <p class="hint">Grave qualquer botão do controle original: se o protocolo for reconhecido ele é configurado sozinho. Ou escolha abaixo.</p>
+      <label class="lbl" for="protoSelect">PROTOCOLO</label>
+      <select id="protoSelect"><option value="-1">— carregando —</option></select>
+      <label class="lbl" for="protoModel">MODELO (−1 = PADRÃO)</label>
+      <input id="protoModel" type="number" value="-1" inputmode="numeric">
+      <div class="row" style="margin-top:12px">
+        <button class="dark grow" id="btnSaveProto">Salvar</button>
+        <button class="grow" id="btnReloadProto">Recarregar lista</button>
+      </div>
+    </div>
+
+    <footer>AR-CTRL 2000 · receptor ESP32 + emissor ESP-01</footer>
+  </section>
+</div>
+
+<!-- gravação -->
+<div class="overlay" id="learnOverlay" hidden>
+  <div class="dialog">
+    <h3 id="learnTitle">GRAVANDO</h3>
+    <div class="body">
+      <div id="learnWaiting">
+        <div class="scan">((( IR )))</div>
+        <p style="text-align:center;margin:0">Aperte o botão no controle<br>sinal: <b id="learnKey"></b></p>
+        <div class="progress"><div id="learnBar" style="width:100%"></div></div>
+      </div>
+      <div id="learnResult" hidden></div>
+    </div>
+    <div class="actions" id="learnActions"></div>
+  </div>
+</div>
+
+<!-- diálogo genérico -->
+<div class="overlay" id="dialog" hidden>
+  <div class="dialog">
+    <h3 id="dlgTitle"></h3>
+    <div class="body">
+      <div id="dlgBody"></div>
+      <input id="dlgInput" hidden maxlength="24" autocomplete="off" autocapitalize="off" style="margin-top:10px">
+    </div>
+    <div class="actions" id="dlgActions"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ======================================================================
+// Constantes (os UUIDs precisam bater com Receptor/src/transport_ble.cpp)
+// ======================================================================
+const UUID = {
+  svc: 'c9b8f500-ac00-4c0d-9e5a-2b1d4e000001',
+  rx:  'c9b8f500-ac00-4c0d-9e5a-2b1d4e000002',
+  tx:  'c9b8f500-ac00-4c0d-9e5a-2b1d4e000003',
+};
+const TEMP_MIN = 16, TEMP_MAX = 30;
+
+const MODES = [['auto','AUTO'],['cool','FRIO'],['heat','QUENTE'],['dry','SECAR'],['fan','VENT']];
+const FANS = [['auto','AUTO'],['min','MÍN'],['low','BAIXA'],['medium','MÉDIA'],['high','ALTA'],['max','MÁX']];
+const SWINGV = [['off','FIXA'],['auto','AUTO'],['highest','TOPO'],['high','ALTA'],['middle','MEIO'],['low','BAIXA'],['lowest','BASE']];
+const SWINGH = [['off','FIXA'],['auto','AUTO'],['leftmax','ESQ+'],['left','ESQ'],['middle','MEIO'],['right','DIR'],['rightmax','DIR+'],['wide','AMPLA']];
+const EXTRAS = [['turbo','TURBO'],['econo','ECO'],['quiet','SILENC'],['light','LUZ'],['sleep','SONO'],['clean','LIMPAR'],['filter','FILTRO'],['beep','BIPE']];
+const label = (list, v) => (list.find(i => i[0] === v) || [v, String(v).toUpperCase()])[1];
+
+// Catálogo de nomes padrão usados no modo APRENDIDO (ver README)
+const temps = p => Array.from({length: TEMP_MAX - TEMP_MIN + 1}, (_, i) => [`${p}${TEMP_MIN + i}`, `${TEMP_MIN + i}°`]);
+const CATALOG = [
+  { title: 'LIGAR / DESLIGAR', keys: [['power_on','Ligar'],['power_off','Desligar'],['power','Liga/desl (alterna)']] },
+  { title: 'MODO', keys: [...MODES.map(([k,l]) => ['mode_'+k, l]), ['mode','Modo (ciclo)']] },
+  { title: 'TEMPERATURA ±', keys: [['temp_up','Temp +'],['temp_down','Temp −']] },
+  { title: 'FRIO + TEMP', keys: temps('cool_') },
+  { title: 'QUENTE + TEMP', keys: temps('heat_') },
+  { title: 'AUTO + TEMP', keys: temps('auto_') },
+  { title: 'SECAR + TEMP', keys: temps('dry_') },
+  { title: 'TEMP (QUALQUER MODO)', keys: temps('temp_') },
+  { title: 'VENTILAÇÃO', keys: [...FANS.map(([k,l]) => ['fan_'+k, l]), ['fan','Vent (ciclo)']] },
+  { title: 'ALETA VERTICAL', keys: [...SWINGV.map(([k,l]) => ['swing_'+k, l]), ['swing_on','Liga'],['swing','Alterna']] },
+  { title: 'ALETA HORIZONTAL', keys: [...SWINGH.map(([k,l]) => ['swingh_'+k, l]), ['swingh_on','Liga'],['swingh','Alterna']] },
+  { title: 'FUNÇÕES', keys: EXTRAS.flatMap(([k,l]) => [[k+'_on', l+' liga'],[k+'_off', l+' desl'],[k, l+' alterna']]) },
+];
+const CATALOG_LABEL = Object.fromEntries(CATALOG.flatMap(g => g.keys.map(([k,l]) => [k, `${g.title.split(' ')[0]} · ${l}`])));
+
+// ======================================================================
+// Utilidades
+// ======================================================================
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sanitizeKey = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+
+let toastTimer;
+function toast(msg, kind = '') {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = 'show ' + kind;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = kind, 2600);
+}
+
+// Diálogo próprio (alert/confirm/prompt não funcionam em todo lugar)
+function dialog({ title, body = '', input = null, buttons }) {
+  return new Promise(resolve => {
+    $('#dlgTitle').textContent = title;
+    $('#dlgBody').innerHTML = body;
+    const inp = $('#dlgInput');
+    inp.hidden = input === null;
+    inp.value = input || '';
+    const actions = $('#dlgActions');
+    actions.innerHTML = '';
+    const close = value => { $('#dialog').hidden = true; resolve({ value, text: inp.value }); };
+    for (const b of buttons) {
+      const el = document.createElement('button');
+      el.textContent = b.label;
+      el.className = b.cls || '';
+      el.onclick = () => close(b.value);
+      actions.appendChild(el);
+    }
+    $('#dialog').hidden = false;
+    if (input !== null) setTimeout(() => inp.focus(), 50);
+  });
+}
+
+// ======================================================================
+// Transportes: BLE (Web Bluetooth), HTTP (página servida pelo ESP32-S2) e DEMO
+// Todos trocam objetos JSON; o receptor responde com mensagens {t: ...}
+// ======================================================================
+class BleLink {
+  constructor(onMsg, onClose) {
+    this.name = 'Bluetooth';
+    this.onMsg = onMsg; this.onClose = onClose;
+    this.buf = ''; this.q = Promise.resolve();
+    this.enc = new TextEncoder(); this.dec = new TextDecoder();
+  }
+  async open() {
+    this.device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [UUID.svc] }, { namePrefix: 'ArCondicionado' }],
+      optionalServices: [UUID.svc],
+    });
+    this.device.addEventListener('gattserverdisconnected', () => this.onClose());
+    const server = await this.device.gatt.connect();
+    const svc = await server.getPrimaryService(UUID.svc);
+    this.rx = await svc.getCharacteristic(UUID.rx);
+    this.tx = await svc.getCharacteristic(UUID.tx);
+    this.tx.addEventListener('characteristicvaluechanged', e => this.feed(e.target.value));
+    await this.tx.startNotifications();
+    this.name = 'Bluetooth · ' + (this.device.name || 'receptor');
+  }
+  feed(dataView) {
+    this.buf += this.dec.decode(dataView, { stream: true });
+    let i;
+    while ((i = this.buf.indexOf('\n')) >= 0) {
+      const line = this.buf.slice(0, i).trim();
+      this.buf = this.buf.slice(i + 1);
+      if (line) { try { this.onMsg(JSON.parse(line)); } catch (e) { console.warn('BLE linha inválida', line); } }
+    }
+  }
+  send(obj) {
+    const data = this.enc.encode(JSON.stringify(obj) + '\n');
+    // Web Bluetooth não aceita escritas simultâneas: serializa numa fila
+    this.q = this.q.then(async () => {
+      for (let i = 0; i < data.length; i += 180) {
+        const part = data.slice(i, i + 180);
+        if (this.rx.writeValueWithResponse) await this.rx.writeValueWithResponse(part);
+        else await this.rx.writeValue(part);
+      }
+    }).catch(e => { console.warn(e); toast('Falha ao enviar por BLE', 'err'); });
+    return this.q;
+  }
+  close() { if (this.device && this.device.gatt.connected) this.device.gatt.disconnect(); }
+}
+
+class HttpLink {
+  constructor(onMsg, onClose) {
+    this.name = 'Wi-Fi · ' + location.host;
+    this.onMsg = onMsg; this.onClose = onClose; this.fails = 0;
+  }
+  async open() {
+    await this.post({ c: 'status' });
+    this.timer = setInterval(() => this.post({ c: 'poll' }).catch(() => {}), 800);
+  }
+  async post(obj) {
+    try {
+      const r = await fetch('/api', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(obj) + '\n' });
+      const msgs = await r.json();
+      this.fails = 0;
+      msgs.forEach(m => this.onMsg(m));
+    } catch (e) {
+      if (++this.fails >= 5) { this.close(); this.onClose(); }
+      throw e;
+    }
+  }
+  send(obj) { return this.post(obj).catch(() => toast('Receptor não respondeu', 'err')); }
+  close() { clearInterval(this.timer); }
+}
+
+// Simula o receptor para testar a página sem hardware
+class DemoLink {
+  constructor(onMsg, onClose) {
+    this.name = 'DEMO (simulado)';
+    this.onMsg = onMsg; this.onClose = onClose;
+    this.protos = ['COOLIX','DAIKIN','ELECTRA_AC','FUJITSU_AC','GREE','HAIER_AC','LG','MIDEA','MITSUBISHI_AC','PANASONIC_AC','SAMSUNG_AC','TCL112AC','TOSHIBA_AC','WHIRLPOOL_AC']
+      .map((n, i) => ({ id: 10 + i, n }));
+    this.s = {
+      t: 'status', fw: 'demo', tr: 'demo', learnedMode: false, proto: 'SAMSUNG_AC', protoId: 20, model: -1, protoOk: true,
+      emitter: { paired: true, online: true, mac: 'DE:MO:00:00:00:01', fw: 'demo' },
+      learning: { active: false, key: '', left: 0 }, busy: false, queue: 0,
+      ac: { power: false, mode: 'cool', temp: 23, fan: 'auto', swingv: 'off', swingh: 'off',
+            turbo: false, econo: false, quiet: false, light: true, clean: false, filter: false, beep: true, sleep: false },
+    };
+    this.sigs = [
+      { k: 'power', p: 'NEC', b: 32, n: 67, code: true },
+      { k: 'cool_23', p: 'SAMSUNG_AC', b: 112, n: 233, code: true },
+      { k: 'rapido', p: 'RAW', b: 0, n: 211, code: false },
+    ];
+  }
+  async open() {}
+  emit(m, delay = 80) { setTimeout(() => this.onMsg(JSON.parse(JSON.stringify(m))), delay); }
+  status() { this.emit(this.s); }
+  signals() { this.emit({ t: 'signals', list: this.sigs }); }
+  sent(what) { this.emit({ t: 'sent', ok: true, what }, 350); }
+  send(o) {
+    switch (o.c) {
+      case 'hello': this.status(); this.signals(); break;
+      case 'status': this.status(); break;
+      case 'list': this.signals(); break;
+      case 'protocols': this.emit({ t: 'protocols', list: this.protos }); break;
+      case 'ac': Object.assign(this.s.ac, o.ac); this.status(); if (this.s.learnedMode || this.s.protoOk) this.sent(this.s.learnedMode ? 'aprendido' : 'ar'); break;
+      case 'resend': this.sent('ar'); break;
+      case 'learn':
+        this.s.learning = { active: true, key: o.key || 'rapido', left: 15000 }; this.status();
+        clearTimeout(this.learnTimer);
+        this.learnTimer = setTimeout(() => {
+          const key = this.s.learning.key;
+          this.s.learning = { active: false, key: '', left: 0 };
+          const sig = { k: key, p: 'NEC', b: 32, n: 67, code: true };
+          this.sigs = this.sigs.filter(s => s.k !== key).concat(sig);
+          this.emit({ t: 'learned', key, proto: 'NEC', protoId: 3, bits: 32, n: 67, acCapable: false, autoSet: false });
+          this.signals(); this.status();
+        }, 2500);
+        break;
+      case 'learnCancel': clearTimeout(this.learnTimer); this.s.learning = { active: false, key: '', left: 0 }; this.status(); break;
+      case 'send': this.sent(o.key); break;
+      case 'del': this.sigs = this.sigs.filter(s => s.k !== o.key); this.signals(); break;
+      case 'rename': { const s = this.sigs.find(s => s.k === o.from); if (s) s.k = o.to; this.signals(); break; }
+      case 'setProto': {
+        const p = this.protos.find(p => p.id === o.id);
+        Object.assign(this.s, { protoId: o.id, proto: p ? p.n : '', protoOk: !!p, model: o.model });
+        if (p) this.s.learnedMode = false;
+        this.status(); break;
+      }
+      case 'setMode': this.s.learnedMode = !!o.learned; this.status(); break;
+      case 'ping': this.sent('ping'); break;
+      case 'unpair': this.s.emitter = { paired: false, online: false, mac: '', fw: '' }; this.status(); break;
+    }
+  }
+  close() { clearTimeout(this.learnTimer); }
+}
+
+// ======================================================================
+// Estado da página
+// ======================================================================
+const app = {
+  link: null,
+  dev: null,                // último status do receptor
+  ac: { power: false, mode: 'cool', temp: 23, fan: 'auto', swingv: 'off', swingh: 'off',
+        turbo: false, econo: false, quiet: false, light: false, clean: false, filter: false, beep: false, sleep: false },
+  acEditedAt: 0,
+  signals: [],
+  protocols: [],
+  learnEndsAt: 0,
+};
+const deviceHosted = location.protocol === 'http:' && !['localhost', '127.0.0.1', ''].includes(location.hostname);
+
+function send(obj) {
+  if (!app.link) { toast('Conecte ao receptor primeiro', 'err'); return false; }
+  app.link.send(obj);
+  return true;
+}
+
+// ---------------------------------------------------------------- conexão
+async function connect(kind) {
+  if (app.link) return;
+  const onClose = () => {
+    if (!app.link) return;
+    app.link = null; app.dev = null;
+    toast('Desconectado', 'err');
+    renderAll();
+  };
+  const Link = kind === 'demo' ? DemoLink : kind === 'http' ? HttpLink : BleLink;
+  const link = new Link(handleMsg, onClose);
+  try {
+    $('#connText').textContent = 'conectando…';
+    await link.open();
+    app.link = link;
+    link.send({ c: 'hello' });
+    toast('Conectado: ' + link.name, 'ok');
+  } catch (e) {
+    console.warn(e);
+    if (e && e.name === 'NotFoundError') toast('Nenhum receptor escolhido');
+    else if (e && e.name === 'SecurityError') toast('Bluetooth bloqueado neste ambiente — abra a página pelo link HTTPS', 'err');
+    else toast('Falha ao conectar: ' + (e && e.message || e), 'err');
+  }
+  renderAll();
+}
+
+function disconnect() {
+  const link = app.link;
+  app.link = null; app.dev = null;
+  if (link) link.close();
+  renderAll();
+}
+
+// ---------------------------------------------------------------- mensagens do receptor
+function handleMsg(m) {
+  switch (m.t) {
+    case 'status': {
+      app.dev = m;
+      // não sobrescreve o que o usuário acabou de mexer
+      if (Date.now() - app.acEditedAt > 1500) app.ac = Object.assign({}, app.ac, m.ac);
+      if (m.learning.active) { app.learnEndsAt = Date.now() + m.learning.left; showLearnWaiting(m.learning.key); }
+      else if (!$('#learnWaiting').hidden && !$('#learnOverlay').hidden) hideLearn();
+      renderAll();
+      break;
+    }
+    case 'signals': app.signals = m.list.sort((a, b) => a.k.localeCompare(b.k)); renderSignals(); renderMap(); renderLearnFunc(); break;
+    case 'protocols': app.protocols = m.list.sort((a, b) => a.n.localeCompare(b.n)); renderProtocols(); break;
+    case 'learned': showLearnResult(m); break;
+    case 'learnTimeout': showLearnFail(); break;
+    case 'sent':
+      if (m.ok) toast(m.what === 'ping' ? 'Emissor respondeu!' : 'Enviado ✓ ' + (CATALOG_LABEL[m.what] || m.what), 'ok');
+      else toast('Falhou: ' + (m.err || 'erro'), 'err');
+      break;
+    case 'missing': toast('Sem sinal gravado para: ' + m.keys.join(', '), 'err'); break;
+    case 'remote': toast('Controle original detectado — estado sincronizado'); break;
+    case 'error': toast(m.msg, 'err'); break;
+  }
+}
+
+// ---------------------------------------------------------------- controle do ar
+let acTimer;
+function editAc(patch, immediate = false) {
+  Object.assign(app.ac, patch);
+  app.acEditedAt = Date.now();
+  renderRemote();
+  clearTimeout(acTimer);
+  // agrupa toques rápidos (ex.: + + +) num único envio
+  acTimer = setTimeout(() => send({ c: 'ac', ac: app.ac }), immediate ? 0 : 450);
+}
+
+function makeChips(container, list, field) {
+  const el = $(container);
+  el.innerHTML = '';
+  for (const [value, text] of list) {
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.dataset.value = value;
+    b.onclick = () => editAc({ [field]: value, power: true });
+    el.appendChild(b);
+  }
+}
+
+function setupRemote() {
+  makeChips('#chipsMode', MODES, 'mode');
+  makeChips('#chipsFan', FANS, 'fan');
+  makeChips('#chipsSwingV', SWINGV, 'swingv');
+  makeChips('#chipsSwingH', SWINGH, 'swingh');
+  const ex = $('#chipsExtra');
+  for (const [key, text] of EXTRAS) {
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.dataset.value = key;
+    b.onclick = () => editAc({ [key]: !app.ac[key] });
+    ex.appendChild(b);
+  }
+  $('#btnPower').onclick = () => editAc({ power: !app.ac.power }, true);
+  const step = d => editAc({ temp: Math.min(TEMP_MAX, Math.max(TEMP_MIN, (app.ac.temp || 24) + d)), power: true });
+  $('#btnTempUp').onclick = () => step(1);
+  $('#btnTempDown').onclick = () => step(-1);
+  $('#btnResend').onclick = () => send({ c: 'resend' }) && toast('Reenviando estado…');
+}
+
+function renderRemote() {
+  const a = app.ac;
+  $('#lcd').classList.toggle('off', !a.power);
+  $('#lcdTemp').textContent = a.power ? String(a.temp).padStart(2, '0') : 'OFF';
+  $('#lcdMode').textContent = label(MODES, a.mode);
+  const fanIdx = FANS.findIndex(f => f[0] === a.fan);
+  $('#lcdFan').innerHTML = a.fan === 'auto' ? 'VENT AUTO'
+    : 'VENT <span class="bars">' + '▮'.repeat(fanIdx) + '▯'.repeat(5 - fanIdx) + '</span>';
+  $('#lcdSwing').textContent = 'V:' + label(SWINGV, a.swingv);
+  $('#lcdSwingH').textContent = 'H:' + label(SWINGH, a.swingh);
+  $('#lcdFlags').innerHTML = EXTRAS.map(([k, t]) => `<span class="${a[k] ? 'on' : ''}">${t}</span>`).join('');
+
+  const power = $('#btnPower');
+  power.classList.toggle('on', !!a.power);
+  power.textContent = a.power ? 'Ligado' : 'Desligado';
+  const mark = (sel, value) => document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('sel', b.dataset.value === value));
+  mark('#chipsMode', a.mode);
+  mark('#chipsFan', a.fan);
+  mark('#chipsSwingV', a.swingv);
+  mark('#chipsSwingH', a.swingh);
+  document.querySelectorAll('#chipsExtra button').forEach(b => b.classList.toggle('sel', !!a[b.dataset.value]));
+
+  const d = app.dev;
+  const info = $('#ctrlInfo');
+  const banner = $('#modeBanner');
+  if (!d) { info.textContent = 'Desconectado'; banner.hidden = true; return; }
+  info.innerHTML = (d.learnedMode ? 'Modo APRENDIDO' : 'Protocolo ' + esc(d.proto || '—'))
+    + (d.busy || d.queue ? '<span class="busy-dot" title="enviando"></span>' : '');
+  if (!d.learnedMode && !d.protoOk) {
+    banner.hidden = false;
+    banner.innerHTML = '<b>PROTOCOLO NÃO DEFINIDO</b>Grave um botão do controle original (aba GRAVAR) para detectar o protocolo, escolha-o em CONFIG, ou mude para o modo APRENDIDO.';
+  } else if (!d.emitter.online) {
+    banner.hidden = false;
+    banner.innerHTML = '<b>EMISSOR OFFLINE</b>' + (d.emitter.paired ? 'Verifique se o ESP-01 está ligado.' : 'Ligue o ESP-01: ele pareia sozinho.');
+  } else banner.hidden = true;
+}
+
+// ---------------------------------------------------------------- gravação
+function hasSignal(k) { return app.signals.some(s => s.k === k); }
+
+async function learn(rawKey) {
+  const key = sanitizeKey(rawKey) || 'rapido';
+  if (!app.link) return toast('Conecte ao receptor primeiro', 'err');
+  if (hasSignal(key)) {
+    const r = await dialog({ title: 'SUBSTITUIR?', body: `Já existe um sinal <b>${esc(key)}</b>. Gravar por cima?`,
+      buttons: [{ label: 'Cancelar', value: false }, { label: 'Gravar', value: true, cls: 'dark' }] });
+    if (!r.value) return;
+  }
+  send({ c: 'learn', key });
+  showLearnWaiting(key);
+  app.learnEndsAt = Date.now() + 15000;
+}
+
+let learnTick;
+function showLearnWaiting(key) {
+  $('#learnOverlay').hidden = false;
+  $('#learnWaiting').hidden = false;
+  $('#learnResult').hidden = true;
+  $('#learnTitle').textContent = 'GRAVANDO…';
+  $('#learnKey').textContent = key;
+  const actions = $('#learnActions');
+  actions.innerHTML = '';
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancelar';
+  cancel.onclick = () => { send({ c: 'learnCancel' }); hideLearn(); };
+  actions.appendChild(cancel);
+  clearInterval(learnTick);
+  learnTick = setInterval(() => {
+    const left = Math.max(0, app.learnEndsAt - Date.now());
+    $('#learnBar').style.width = (left / 150) + '%';
+  }, 200);
+}
+
+function hideLearn() {
+  clearInterval(learnTick);
+  $('#learnOverlay').hidden = true;
+}
+
+function showLearnResult(m) {
+  clearInterval(learnTick);
+  $('#learnOverlay').hidden = false;
+  $('#learnWaiting').hidden = true;
+  const res = $('#learnResult');
+  res.hidden = false;
+  $('#learnTitle').textContent = 'GRAVADO ✓';
+  let html = `<dl class="kv"><dt>Nome</dt><dd>${esc(m.key)}</dd><dt>Protocolo</dt><dd>${esc(m.proto)}</dd>`
+    + (m.bits ? `<dt>Bits</dt><dd>${m.bits}</dd>` : '') + `<dt>Pulsos</dt><dd>${m.n}</dd></dl>`;
+  if (m.autoSet) html += `<p class="hint">Protocolo de ar <b>${esc(m.proto)}</b> reconhecido e configurado: o controle completo já funciona!</p>`;
+  else if (m.acCapable && app.dev && app.dev.protoId !== m.protoId) html += `<p class="hint">Este é um protocolo de ar suportado (<b>${esc(m.proto)}</b>).</p>`;
+  res.innerHTML = html;
+
+  const actions = $('#learnActions');
+  actions.innerHTML = '';
+  const add = (text, cls, fn) => { const b = document.createElement('button'); b.textContent = text; b.className = cls; b.onclick = fn; actions.appendChild(b); };
+  if (m.acCapable && !m.autoSet && app.dev && app.dev.protoId !== m.protoId)
+    add('Usar protocolo', 'accent', () => { send({ c: 'setProto', id: m.protoId, model: -1 }); hideLearn(); });
+  add('Testar', '', () => send({ c: 'send', key: m.key }));
+  add('OK', 'dark', hideLearn);
+  toast('Sinal gravado: ' + m.key, 'ok');
+}
+
+function showLearnFail() {
+  clearInterval(learnTick);
+  $('#learnOverlay').hidden = false;
+  $('#learnWaiting').hidden = true;
+  $('#learnResult').hidden = false;
+  $('#learnTitle').textContent = 'NADA RECEBIDO';
+  $('#learnResult').innerHTML = '<p>Nenhum sinal chegou em 15 s. Aponte o controle direto para o receptor IR, bem perto, e tente de novo.</p>';
+  const actions = $('#learnActions');
+  actions.innerHTML = '';
+  const ok = document.createElement('button');
+  ok.textContent = 'OK'; ok.className = 'dark'; ok.onclick = hideLearn;
+  actions.appendChild(ok);
+}
+
+function renderLearnFunc() {
+  const sel = $('#learnFunc');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— sinal livre (outro aparelho) —</option>' + CATALOG.map(g =>
+    `<optgroup label="${esc(g.title)}">` + g.keys.map(([k, l]) =>
+      `<option value="${k}">${hasSignal(k) ? '✓ ' : ''}${esc(l)} (${k})</option>`).join('') + '</optgroup>').join('');
+  sel.value = current;
+}
+
+function renderSignals() {
+  const list = $('#sigList');
+  $('#sigCount').textContent = app.signals.length;
+  if (!app.signals.length) { list.innerHTML = '<li class="empty">Nenhum sinal gravado ainda</li>'; return; }
+  list.innerHTML = app.signals.map(s => `
+    <li>
+      <div class="sig-name">
+        <b>${esc(CATALOG_LABEL[s.k] || s.k)}</b>
+        <small>${esc(s.k)} · ${esc(s.p)}${s.b ? ' ' + s.b + 'b' : ''} · ${s.n} pulsos</small>
+      </div>
+      <button class="small dark" data-act="send" data-key="${esc(s.k)}">▶</button>
+      <button class="small" data-act="rename" data-key="${esc(s.k)}">✎</button>
+      <button class="small pink" data-act="del" data-key="${esc(s.k)}">✕</button>
+    </li>`).join('');
+}
+
+async function signalAction(act, key) {
+  if (act === 'send') { send({ c: 'send', key }); return; }
+  if (act === 'del') {
+    const r = await dialog({ title: 'APAGAR SINAL', body: `Apagar <b>${esc(key)}</b>?`,
+      buttons: [{ label: 'Cancelar', value: false }, { label: 'Apagar', value: true, cls: 'pink' }] });
+    if (r.value) send({ c: 'del', key });
+  }
+  if (act === 'rename') {
+    const r = await dialog({ title: 'RENOMEAR', body: 'Novo nome (a-z, 0-9, _ e -):', input: key,
+      buttons: [{ label: 'Cancelar', value: false }, { label: 'Salvar', value: true, cls: 'dark' }] });
+    const to = sanitizeKey(r.text);
+    if (r.value && to && to !== key) send({ c: 'rename', from: key, to });
+  }
+  if (act === 'relearn') learn(key);
+}
+
+function renderMap() {
+  const box = $('#mapGroups');
+  const open = new Set([...box.querySelectorAll('details[open]')].map(d => d.dataset.title));
+  let mapped = 0;
+  box.innerHTML = CATALOG.map(g => {
+    const done = g.keys.filter(([k]) => hasSignal(k)).length;
+    mapped += done;
+    return `<details class="map" data-title="${esc(g.title)}" ${open.has(g.title) ? 'open' : ''}>
+      <summary><span>${esc(g.title)}</span><span>${done}/${g.keys.length}</span></summary>
+      <div class="map-grid">${g.keys.map(([k, l]) =>
+        `<button class="${hasSignal(k) ? 'ok' : ''}" data-map="${k}" title="${k}">${esc(l)}</button>`).join('')}</div>
+    </details>`;
+  }).join('');
+  $('#mapCount').textContent = mapped + ' gravadas';
+}
+
+async function mapAction(key) {
+  if (!hasSignal(key)) return learn(key);
+  const r = await dialog({ title: (CATALOG_LABEL[key] || key).toUpperCase(), body: `Sinal <b>${esc(key)}</b> já gravado.`,
+    buttons: [{ label: 'Fechar', value: '' }, { label: 'Apagar', value: 'del', cls: 'pink' },
+              { label: 'Regravar', value: 'relearn' }, { label: 'Enviar', value: 'send', cls: 'dark' }] });
+  if (r.value === 'relearn') { send({ c: 'learn', key }); showLearnWaiting(key); app.learnEndsAt = Date.now() + 15000; }
+  else if (r.value) signalAction(r.value, key);
+}
+
+// ---------------------------------------------------------------- config
+function renderProtocols() {
+  const sel = $('#protoSelect');
+  sel.innerHTML = '<option value="-1">— nenhum (usar modo aprendido) —</option>'
+    + app.protocols.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join('');
+  if (app.dev) sel.value = String(app.dev.protoId);
+}
+
+function renderConfig() {
+  const d = app.dev;
+  $('#cfgConn').textContent = app.link ? 'conectado' : 'desconectado';
+  $('#cfgVia').textContent = app.link ? app.link.name : '—';
+  $('#cfgFw').textContent = d ? d.fw : '—';
+  $('#cfgPaired').textContent = d ? (d.emitter.paired ? 'sim' : 'não') : '—';
+  $('#cfgMac').textContent = d && d.emitter.mac || '—';
+  $('#cfgEmFw').textContent = d && d.emitter.fw || '—';
+  $('#cfgEmitterTag').textContent = !d ? '—' : d.emitter.online ? 'ONLINE' : 'OFFLINE';
+  $('#cfgProtoTag').textContent = d ? (d.proto || 'nenhum') : '—';
+  $('#btnModeProto').classList.toggle('sel', !!d && !d.learnedMode);
+  $('#btnModeLearned').classList.toggle('sel', !!d && d.learnedMode);
+  if (d && document.activeElement !== $('#protoSelect')) {
+    if (app.protocols.length) $('#protoSelect').value = String(d.protoId);
+    if (document.activeElement !== $('#protoModel')) $('#protoModel').value = d.model;
+  }
+  $('#btnDemo').textContent = app.link instanceof DemoLink ? 'Sair do demo' : 'Modo demo';
+  $('#btnDemo').disabled = !!app.link && !(app.link instanceof DemoLink);
+}
+
+function renderHeader() {
+  const d = app.dev;
+  const led = $('#connLed');
+  led.className = 'led' + (app.link ? (d && d.emitter.online ? ' on' : ' warn') : '');
+  $('#connText').textContent = !app.link ? 'desconectado'
+    : app.link.name + (d ? (d.emitter.online ? ' · emissor ok' : ' · emissor offline') : '');
+  $('#btnConnect').textContent = app.link ? 'Sair' : 'Conectar';
+}
+
+function renderAll() { renderHeader(); renderRemote(); renderConfig(); }
+
+// ---------------------------------------------------------------- inicialização
+function setup() {
+  setupRemote();
+  renderLearnFunc();
+  renderSignals();
+  renderMap();
+
+  document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
+    if (b.dataset.tab === 'config' && app.link && !app.protocols.length) send({ c: 'protocols' });
+  });
+
+  $('#btnConnect').onclick = () => app.link ? disconnect() : connect(deviceHosted ? 'http' : 'ble');
+  $('#btnDemo').onclick = () => app.link instanceof DemoLink ? disconnect() : connect('demo');
+
+  $('#learnFunc').onchange = e => { if (e.target.value) $('#learnName').value = e.target.value; };
+  $('#learnName').oninput = e => {
+    const clean = sanitizeKey(e.target.value);
+    if (clean !== e.target.value) e.target.value = clean;
+  };
+  $('#btnLearn').onclick = () => learn($('#learnName').value);
+
+  $('#sigList').onclick = e => { const b = e.target.closest('button[data-act]'); if (b) signalAction(b.dataset.act, b.dataset.key); };
+  $('#mapGroups').onclick = e => { const b = e.target.closest('button[data-map]'); if (b) mapAction(b.dataset.map); };
+
+  $('#btnPing').onclick = () => send({ c: 'ping' }) && toast('Testando emissor…');
+  $('#btnUnpair').onclick = async () => {
+    const r = await dialog({ title: 'ESQUECER EMISSOR', body: 'O receptor vai parear com o próximo emissor que aparecer. Continuar?',
+      buttons: [{ label: 'Cancelar', value: false }, { label: 'Esquecer', value: true, cls: 'pink' }] });
+    if (r.value) send({ c: 'unpair' });
+  };
+  $('#btnModeProto').onclick = () => send({ c: 'setMode', learned: false });
+  $('#btnModeLearned').onclick = () => send({ c: 'setMode', learned: true });
+  $('#btnSaveProto').onclick = () => {
+    const model = parseInt($('#protoModel').value, 10);
+    send({ c: 'setProto', id: parseInt($('#protoSelect').value, 10), model: isNaN(model) ? -1 : model }) && toast('Protocolo salvo');
+  };
+  $('#btnReloadProto').onclick = () => send({ c: 'protocols' });
+
+  // Avisos de compatibilidade
+  const banner = $('#compatBanner');
+  if (deviceHosted) {
+    connect('http');
+  } else if (!navigator.bluetooth) {
+    banner.hidden = false;
+    banner.innerHTML = '<b>SEM WEB BLUETOOTH</b>Este navegador não suporta Bluetooth. Use o Chrome no Android (ou o app Bluefy no iPhone). '
+      + 'Se o seu receptor é o ESP32-S2, conecte-se à rede Wi-Fi <i>ArCondicionado-XXXX</i> e abra http://192.168.4.1. '
+      + 'Para conhecer a página, use o MODO DEMO em CONFIG.';
+  }
+  renderAll();
+}
+
+setup();
+</script>
+</body>
+</html>
