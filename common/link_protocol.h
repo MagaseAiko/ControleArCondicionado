@@ -54,6 +54,11 @@ struct __attribute__((packed)) LinkHello {
 #define AC_F_FILTER (1 << 6)
 #define AC_F_CLEAN (1 << 7)
 #define AC_F_BEEP (1 << 8)
+// Estado de energia anterior (definido pelo receptor). Usado pelos protocolos
+// em que o bit de energia é "alternar" (ex.: Whirlpool/Consul): o emissor
+// alterna só quando o estado anterior é diferente do desejado.
+#define AC_F_HAS_PREV (1 << 9)
+#define AC_F_PREV_POWER (1 << 10)
 
 struct __attribute__((packed)) LinkAc {
   LinkHeader h;

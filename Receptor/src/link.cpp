@@ -158,12 +158,14 @@ void linkLoop() {
 
 void linkOnResult(LinkResultCallback cb) { resultCb = cb; }
 
-uint16_t linkSendAc(const stdAc::state_t &state) {
+uint16_t linkSendAc(const stdAc::state_t &state, bool prevPower) {
   if (!paired) return 0;
   LinkAc m;
   const uint16_t seq = newSeq();
   linkInitHeader(m.h, LINK_AC, seq);
   linkPackAc(state, m);
+  m.flags |= AC_F_HAS_PREV;
+  if (prevPower) m.flags |= AC_F_PREV_POWER;
   return sendPacket(emitter, &m, sizeof(m)) ? seq : 0;
 }
 

@@ -50,6 +50,7 @@ enum class JobKind : uint8_t { Ac, Signal, Ping };
 struct Job {
   JobKind kind;
   stdAc::state_t ac;
+  bool prevPower = false;  // energia antes deste envio (protocolos com "alternar")
   String key;
 };
 static std::deque<Job> jobs;
@@ -264,10 +265,11 @@ static void queueSignal(const String &key) {
   queueJob(job);
 }
 
-static void queueAc(const stdAc::state_t &state) {
+static void queueAc(const stdAc::state_t &state, bool prevPower) {
   Job job;
   job.kind = JobKind::Ac;
   job.ac = state;
+  job.prevPower = prevPower;
   queueJob(job);
 }
 
@@ -279,7 +281,7 @@ static void startJob(const Job &job) {
   uint16_t seq = 0;
   bool usedCode = false;
   switch (job.kind) {
-    case JobKind::Ac: seq = linkSendAc(job.ac); break;
+    case JobKind::Ac: seq = linkSendAc(job.ac, job.prevPower); break;
     case JobKind::Ping: seq = linkPing(); break;
     case JobKind::Signal: {
       Signal sig;
@@ -572,7 +574,7 @@ static void handleMessage(const String &line) {
     if (learnedMode) {
       queueLearnedChange(ac, next);
     } else if (protocolReady()) {
-      queueAc(next);
+      queueAc(next, ac.power);
     } else {
       notifyError("Defina o protocolo do ar (CONFIG) ou use o modo APRENDIDO");
     }
@@ -583,7 +585,7 @@ static void handleMessage(const String &line) {
 
   if (c == "resend") {
     if (!learnedMode) {
-      if (protocolReady()) queueAc(ac);
+      if (protocolReady()) queueAc(ac, ac.power);
       else notifyError("Protocolo do ar nao definido");
     } else {
       const String combo = String(acModeName(ac.mode)) + "_" + String(lroundf(ac.degrees));
@@ -640,7 +642,9 @@ static void handleMessage(const String &line) {
     test.protocol = (decode_type_t)id;
     test.model = doc["model"] | -1;
     acMergeJson(doc["ac"].as<JsonObjectConst>(), test);
-    queueAc(test);
+    // No teste não sabemos se o ar está ligado: força a troca de energia
+    // (em protocolos com "alternar", LIGAR e DESLIGAR enviam o bit de alternar)
+    queueAc(test, !test.power);
     return;
   }
 

@@ -90,8 +90,15 @@ static void handleAc(RxPacket &p, uint16_t seq) {
   linkUnpackAc(m, st);
   bool ok = IRac::isProtocolSupported(st.protocol);
   if (ok) {
-    irac.next = st;
-    ok = irac.sendAc();  // usa o estado anterior para protocolos com "toggle"
+    if (m.flags & AC_F_HAS_PREV) {
+      // O receptor sabe o estado anterior: usa ele para os bits de "alternar"
+      stdAc::state_t prev = st;
+      prev.power = m.flags & AC_F_PREV_POWER;
+      ok = irac.sendAc(st, &prev);
+    } else {
+      irac.next = st;
+      ok = irac.sendAc();  // usa o estado anterior guardado no emissor
+    }
   }
   logMsg(ok ? "AC enviado" : "AC: protocolo nao suportado");
   reply(p.mac, seq, ok ? LINK_OK : LINK_ERR_UNSUPPORTED);
