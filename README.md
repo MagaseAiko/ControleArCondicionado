@@ -81,7 +81,10 @@ A aba **CONFIG → Modo demo** simula o receptor, para testar a página sem hard
 
 Se a detecção não funcionar, escolha o protocolo em **CONFIG → Protocolo do ar**.
 
-**Ar Elgin:** a Elgin não tem protocolo próprio. Ela usa o protocolo do fabricante de cada modelo (Midea/Coolix, Gree, AUX, TCL, Haier...). Em **CONFIG → Assistente Elgin**, toque em TESTAR em cada candidato até o ar responder e depois em USAR. Esses protocolos também aparecem primeiro na lista de protocolos.
+**Assistente de marca (Elgin / Consul):** em **CONFIG → Assistente de marca**, escolha a marca e toque em TESTAR em cada candidato até o ar responder; depois toque em USAR. Os protocolos da marca escolhida também aparecem primeiro na lista de protocolos.
+
+- **Elgin:** não tem protocolo próprio. Usa o do fabricante de cada modelo (Midea/Coolix, Gree, AUX, TCL, Haier...).
+- **Consul:** é da Whirlpool, então o primeiro candidato é o `WHIRLPOOL_AC`: modelo 1 para os controles DG11J1-3A/DG11J1-04, modelo 2 para o DG11J1-91. Nesse protocolo, o liga/desliga alterna o estado em vez de definir. Se o ar ficar com o estado trocado, toque em LIGA/DESLIGA de novo.
 
 ### Modo APRENDIDO (qualquer ar, inclusive protocolo desconhecido)
 
