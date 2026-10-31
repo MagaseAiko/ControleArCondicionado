@@ -33,6 +33,9 @@
 static Preferences prefs;
 static stdAc::state_t ac;  // estado em que o ar deve estar
 static bool learnedMode = false;
+// Whirlpool: o bit de energia é o estado (1 = ligado), como no Consul, e não
+// "alternar" (Whirlpool original). Detectado sozinho pelo controle original.
+static bool powerAbs = true;
 static bool stateDirty = false;
 static uint32_t stateDirtySince = 0;
 
@@ -148,6 +151,7 @@ static void sendStatus() {
   d["protoId"] = (int)ac.protocol;
   d["model"] = ac.model;
   d["protoOk"] = protocolReady();
+  d["powerAbs"] = powerAbs;
 
   JsonObject em = d["emitter"].to<JsonObject>();
   em["paired"] = linkPaired();
@@ -213,6 +217,7 @@ static void saveState() {
   prefs.putBytes("ac", &packed, sizeof(packed));
   prefs.putBool("learned", learnedMode);
   prefs.putBool("protoUser", protoUser);
+  prefs.putBool("powerAbs", powerAbs);
   stateDirty = false;
 }
 
@@ -233,6 +238,7 @@ static void loadState() {
   }
   learnedMode = prefs.getBool("learned", false);
   protoUser = prefs.getBool("protoUser", false);
+  powerAbs = prefs.getBool("powerAbs", true);
 }
 
 // ---------------------------------------------------------------- fila de envios
@@ -288,7 +294,7 @@ static void startJob(const Job &job) {
   uint16_t seq = 0;
   bool usedCode = false;
   switch (job.kind) {
-    case JobKind::Ac: seq = linkSendAc(job.ac, job.prev); break;
+    case JobKind::Ac: seq = linkSendAc(job.ac, job.prev, powerAbs); break;
     case JobKind::Ping: seq = linkPing(); break;
     case JobKind::Signal: {
       Signal sig;
@@ -466,6 +472,69 @@ static void stopLearning() {
   sendStatus();
 }
 
+// ---------------------------------------------------------------- leitura do controle original
+
+// Whirlpool: lê o bit de energia e o "botão" do sinal recebido.
+static bool whirlpoolBits(bool &powerBit, uint8_t &cmd) {
+#if DECODE_WHIRLPOOL_AC
+  if (results.decode_type != decode_type_t::WHIRLPOOL_AC) return false;
+  IRWhirlpoolAc w(kGpioUnused);
+  w.setRaw(results.state);
+  powerBit = w.getPowerToggle();
+  cmd = w.getCommand();
+  return true;
+#else
+  return false;
+#endif
+}
+
+// Um botão que não é o LIGA/DESLIGA com o bit de energia em 1 só acontece
+// quando o bit é o estado (Consul), e não "alternar".
+static void detectPowerAbs() {
+  bool bit;
+  uint8_t cmd;
+  if (!whirlpoolBits(bit, cmd) || powerAbs || !bit || cmd == kWhirlpoolAcCommandPower) return;
+  powerAbs = true;
+  markDirty();
+  Serial.println("Whirlpool: bit de energia absoluto detectado");
+}
+
+// Converte o sinal recebido em estado do ar (com o ajuste do Whirlpool/Consul).
+static bool decodeAc(stdAc::state_t &out) {
+  if (!IRAcUtils::decodeToState(&results, &out, &ac)) return false;
+  bool bit;
+  uint8_t cmd;
+  if (powerAbs && whirlpoolBits(bit, cmd)) out.power = bit;
+  return true;
+}
+
+// Diagnóstico: mostra na página o último sinal recebido.
+static void reportIr() {
+  JsonDocument d;
+  d["t"] = "ir";
+  d["proto"] = results.decode_type == decode_type_t::UNKNOWN ? String("RAW") : typeToString(results.decode_type);
+  d["bits"] = results.bits;
+  if (hasACState(results.decode_type)) {
+    String hex;
+    for (uint16_t i = 0; i < results.bits / 8; i++) {
+      char b[3];
+      snprintf(b, sizeof(b), "%02X", results.state[i]);
+      hex += b;
+    }
+    d["hex"] = hex;
+  } else {
+    d["hex"] = uint64ToString(results.value, 16);
+  }
+  bool bit;
+  uint8_t cmd;
+  if (whirlpoolBits(bit, cmd)) {
+    d["wPower"] = bit;
+    d["wCmd"] = cmd;
+  }
+  sendJson(d);
+  Serial.printf("IR: %s %d bits %s\n", d["proto"].as<const char *>(), results.bits, d["hex"].as<const char *>());
+}
+
 static void finishLearning() {
   if (results.overflow) {
     notifyError("Sinal longo demais para o buffer");
@@ -512,7 +581,7 @@ static void finishLearning() {
   // (também atualiza o modelo quando é o mesmo protocolo, ex.: Whirlpool DG11J1-3A x DG11J1-91)
   if (acCapable && (!protoUser || ac.protocol == decode_type_t::UNKNOWN || ac.protocol == type)) {
     stdAc::state_t decoded;
-    if (IRAcUtils::decodeToState(&results, &decoded, &ac)) ac = decoded;
+    if (decodeAc(decoded)) ac = decoded;
     ac.protocol = type;
     protoUser = true;  // veio do controle original: não troca mais sozinho
     autoSet = true;
@@ -541,7 +610,7 @@ static void syncFromRemote() {
   if (learnedMode || !protocolReady() || results.decode_type != ac.protocol) return;
   if (pending.active || millis() - lastJobDone < 1500) return;  // é o nosso próprio emissor
   stdAc::state_t decoded;
-  if (!IRAcUtils::decodeToState(&results, &decoded, &ac)) return;
+  if (!decodeAc(decoded)) return;
   if (ac.model >= 0 && decoded.model < 0) decoded.model = ac.model;
   ac = decoded;
   markDirty();
@@ -553,6 +622,11 @@ static void syncFromRemote() {
 
 static void handleIr() {
   if (!irrecv.decode(&results)) return;  // com save_buffer a captura continua sozinha
+  const bool ours = pending.active || millis() - lastJobDone < 1500;  // nosso próprio emissor
+  if (!ours) {
+    reportIr();
+    detectPowerAbs();
+  }
   if (learning.active) finishLearning();
   else syncFromRemote();
 }
@@ -658,6 +732,12 @@ static void handleMessage(const String &line) {
     prev.power = !test.power;
     queueAc(test, prev);
     return;
+  }
+
+  if (c == "setPowerAbs") {
+    powerAbs = doc["on"] | true;
+    markDirty();
+    return sendStatus();
   }
 
   if (c == "setMode") {

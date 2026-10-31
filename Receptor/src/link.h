@@ -13,7 +13,8 @@ void linkOnResult(LinkResultCallback cb);
 
 // Retornam o número de sequência do envio, ou 0 se o emissor não recebeu.
 // prev: estado anterior do ar (para protocolos com "alternar" e com "botão")
-uint16_t linkSendAc(const stdAc::state_t &state, const stdAc::state_t &prev);
+// powerAbs: Whirlpool com bit de energia absoluto (ver AC_F_POWER_ABS)
+uint16_t linkSendAc(const stdAc::state_t &state, const stdAc::state_t &prev, bool powerAbs);
 uint16_t linkSendCode(int16_t protocol, uint16_t bits, bool isState, const uint8_t *data, uint8_t nbytes);
 uint16_t linkSendRaw(const uint16_t *timings, uint16_t count, uint8_t khz);
 uint16_t linkPing();

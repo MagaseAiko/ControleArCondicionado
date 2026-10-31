@@ -85,7 +85,8 @@ static void sendHello() {
 #if SEND_WHIRLPOOL_AC
 // Whirlpool/Consul: o sinal leva o "botão" apertado e o liga/desliga é de
 // alternar. Montamos o sinal como o controle original faria.
-static bool sendWhirlpool(const stdAc::state_t &st, bool prevPower, uint8_t cmd) {
+// powerAbs: bit de energia é o estado (Consul); senão é "alternar" (Whirlpool).
+static bool sendWhirlpool(const stdAc::state_t &st, bool prevPower, uint8_t cmd, bool powerAbs) {
   IRWhirlpoolAc w(IR_LED_PIN);
   w.begin();
   w.setModel((whirlpool_ac_remote_model_t)st.model);
@@ -96,7 +97,7 @@ static bool sendWhirlpool(const stdAc::state_t &st, bool prevPower, uint8_t cmd)
   w.setSuper(st.turbo);
   w.setLight(st.light);
   w.setSleep(st.sleep >= 0);
-  w.setPowerToggle(st.power != prevPower);
+  w.setPowerToggle(powerAbs ? st.power : st.power != prevPower);
   switch (cmd) {
     case AC_CMD_MODE:
       w.setCommand(st.mode == stdAc::opmode_t::kAuto ? kWhirlpoolAcCommand6thSense : kWhirlpoolAcCommandMode);
@@ -126,7 +127,7 @@ static void handleAc(RxPacket &p, uint16_t seq) {
     const uint8_t cmd = (m.flags & AC_F_CMD_MASK) >> AC_F_CMD_SHIFT;
 #if SEND_WHIRLPOOL_AC
     if ((m.flags & AC_F_HAS_PREV) && st.protocol == decode_type_t::WHIRLPOOL_AC) {
-      ok = sendWhirlpool(st, prevPower, cmd);
+      ok = sendWhirlpool(st, prevPower, cmd, m.flags & AC_F_POWER_ABS);
     } else
 #endif
     if (m.flags & AC_F_HAS_PREV) {

@@ -357,6 +357,21 @@
     </div>
 
     <div class="panel">
+      <h2>LIGA/DESLIGA WHIRLPOOL <span class="tag">consul</span></h2>
+      <div class="seg">
+        <button id="btnPowerAbs">Estado (Consul)</button>
+        <button id="btnPowerToggle">Alternar (Whirlpool)</button>
+      </div>
+      <p class="hint">Só vale para o protocolo WHIRLPOOL_AC. <b>Estado</b>: cada sinal diz se o ar fica ligado ou desligado (Consul). <b>Alternar</b>: o sinal só troca liga/desliga (Whirlpool de outros países). Se qualquer comando da página desliga o ar, use <b>Estado</b>. O receptor detecta isso sozinho quando você usa o controle original.</p>
+    </div>
+
+    <div class="panel">
+      <h2>ÚLTIMO SINAL RECEBIDO <span class="tag">diagnóstico</span></h2>
+      <p class="hint">Aperte um botão do controle original apontado para o receptor.</p>
+      <p class="hint" id="lastIr" style="word-break:break-all">—</p>
+    </div>
+
+    <div class="panel">
       <h2>PROTOCOLO DO AR <span class="tag" id="cfgProtoTag">—</span></h2>
       <p class="hint">Grave qualquer botão do controle original: se o protocolo for reconhecido ele é configurado sozinho. Ou escolha abaixo.</p>
       <label class="lbl" for="protoSelect">PROTOCOLO</label>
@@ -562,7 +577,7 @@ class DemoLink {
     this.protos = ['CARRIER_AC64','COOLIX','DAIKIN','ELECTRA_AC','FUJITSU_AC','GREE','HAIER_AC','HAIER_AC_YRW02','KELON','LG','MIDEA','MITSUBISHI_AC','PANASONIC_AC','SAMSUNG_AC','TCL112AC','TECO','TOSHIBA_AC','WHIRLPOOL_AC']
       .map((n, i) => ({ id: 10 + i, n }));
     this.s = {
-      t: 'status', fw: 'demo', tr: 'demo', learnedMode: false, proto: 'SAMSUNG_AC', protoId: 20, model: -1, protoOk: true,
+      t: 'status', fw: 'demo', tr: 'demo', learnedMode: false, proto: 'SAMSUNG_AC', protoId: 20, model: -1, protoOk: true, powerAbs: true,
       emitter: { paired: true, online: true, mac: 'DE:MO:00:00:00:01', fw: 'demo' },
       learning: { active: false, key: '', left: 0 }, busy: false, queue: 0,
       ac: { power: false, mode: 'cool', temp: 23, fan: 'auto', swingv: 'off', swingh: 'off',
@@ -611,6 +626,7 @@ class DemoLink {
         this.status(); break;
       }
       case 'setMode': this.s.learnedMode = !!o.learned; this.status(); break;
+      case 'setPowerAbs': this.s.powerAbs = !!o.on; this.status(); break;
       case 'ping': this.sent('ping'); break;
       case 'unpair': this.s.emitter = { paired: false, online: false, mac: '', fw: '' }; this.status(); break;
     }
@@ -695,6 +711,11 @@ function handleMsg(m) {
       break;
     case 'missing': toast('Sem sinal gravado para: ' + m.keys.join(', '), 'err'); break;
     case 'remote': toast('Controle original detectado — estado sincronizado'); break;
+    case 'ir': {
+      const w = m.wPower === undefined ? '' : ` · energia=${m.wPower ? 1 : 0} · botão=${m.wCmd}`;
+      $('#lastIr').textContent = `${m.proto} · ${m.bits} bits${w} · ${m.hex}`;
+      break;
+    }
     case 'error': toast(m.msg, 'err'); break;
   }
 }
@@ -963,7 +984,7 @@ const BRANDS = {
   },
   consul: {
     name: 'Consul', tag: 'CBK12BXNA',
-    hint: 'A Consul é da Whirlpool: o receptor já vem com WHIRLPOOL_AC modelo 2 (Consul CBK12BXNA, controle W11683858). Se a temperatura no display do ar não bater com a da página, use o modelo 1. Nesse protocolo o liga/desliga é um botão de alternar: cada TESTAR liga o ar se ele estiver desligado e desliga se estiver ligado. Um bipe sem ligar quer dizer que o ar entendeu o sinal. Se a página e o ar ficarem com o estado trocado, toque em LIGA/DESLIGA duas vezes.',
+    hint: 'A Consul é da Whirlpool: o receptor já vem com WHIRLPOOL_AC modelo 2 (Consul CBK12BXNA, controle W11683858). Se a temperatura no display do ar não bater com a da página, use o modelo 1. No Consul, cada sinal diz se o ar fica ligado ou desligado (veja LIGA/DESLIGA WHIRLPOOL abaixo).',
     cands: [
       ['WHIRLPOOL_AC', 2, 'Whirlpool DG11J1-91 (16–30°): padrão para CBK12BXNA'],
       ['WHIRLPOOL_AC', 1, 'Whirlpool DG11J1-3A / DG11J1-04 (18–32°)'],
@@ -1030,6 +1051,8 @@ function renderConfig() {
   $('#cfgProtoTag').textContent = d ? (d.proto || 'nenhum') : '—';
   $('#btnModeProto').classList.toggle('sel', !!d && !d.learnedMode);
   $('#btnModeLearned').classList.toggle('sel', !!d && d.learnedMode);
+  $('#btnPowerAbs').classList.toggle('sel', !!d && d.powerAbs !== false);
+  $('#btnPowerToggle').classList.toggle('sel', !!d && d.powerAbs === false);
   if (d && document.activeElement !== $('#protoSelect')) {
     if (app.protocols.length) $('#protoSelect').value = String(d.protoId);
     if (document.activeElement !== $('#protoModel')) $('#protoModel').value = d.model;
@@ -1084,6 +1107,8 @@ function setup() {
   };
   $('#btnModeProto').onclick = () => send({ c: 'setMode', learned: false });
   $('#btnModeLearned').onclick = () => send({ c: 'setMode', learned: true });
+  $('#btnPowerAbs').onclick = () => send({ c: 'setPowerAbs', on: true });
+  $('#btnPowerToggle').onclick = () => send({ c: 'setPowerAbs', on: false });
   $('#btnSaveProto').onclick = () => {
     const model = parseInt($('#protoModel').value, 10);
     send({ c: 'setProto', id: parseInt($('#protoSelect').value, 10), model: isNaN(model) ? -1 : model }) && toast('Protocolo salvo');

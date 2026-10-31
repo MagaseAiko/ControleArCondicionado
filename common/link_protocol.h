@@ -63,6 +63,8 @@ struct __attribute__((packed)) LinkHello {
 // (Whirlpool/Consul) mandam essa informação no sinal, como o controle original.
 #define AC_F_CMD_SHIFT 11
 #define AC_F_CMD_MASK (0xF << AC_F_CMD_SHIFT)
+// Whirlpool: bit de energia é o estado (1 = ligado) e não "alternar" (Consul)
+#define AC_F_POWER_ABS (1 << 15)
 enum LinkAcCmd : uint8_t {
   AC_CMD_NONE = 0,
   AC_CMD_POWER,
