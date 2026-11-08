@@ -103,6 +103,19 @@ button.tile:active, .tile button:active { transform: scale(.95); }
 .rk:active { background: var(--surface-2); }
 .rk-label { font-size: 12px; color: var(--muted); padding-block: 2px; }
 
+/* ar: liga/desliga e temperatura */
+.split { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
+.split button { flex: 1; height: 100%; border: 0; background: transparent; color: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-weight: 600; position: relative; }
+.split button + button { border-left: 1px solid var(--border); }
+.split .on-btn { background: var(--accent); color: var(--on-accent); }
+.split .off-btn { background: var(--danger-soft); color: var(--danger); }
+.thermo { grid-column: 1 / -1; grid-row: span 2; flex-direction: row; justify-content: space-between; padding: 10px; gap: 8px; }
+.thermo .tbtn { position: relative; width: 72px; height: 100%; border-radius: 18px; border: 0; background: var(--surface-2); color: var(--text); display: grid; place-items: center; flex: none; }
+.thermo .tbtn .ic { width: 28px; height: 28px; }
+.thermo .tval { flex: 1; min-width: 0; border: 0; background: transparent; color: inherit; display: grid; justify-items: center; gap: 2px; padding: 0; }
+.thermo .tnum { font-size: 52px; font-weight: 700; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.thermo .tnum small { font-size: 22px; font-weight: 600; vertical-align: top; margin-left: 2px; }
+.thermo .tsub { font-size: 12px; color: var(--muted); font-weight: 600; }
 .dpad-wrap { grid-column: 1 / -1; grid-row: span 3; display: grid; place-items: center; }
 .dpad { position: relative; width: min(250px, 100%); aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow); }
 .dp { position: absolute; border: 0; background: transparent; color: inherit; display: grid; place-items: center; border-radius: 50%; width: 33%; height: 33%; transition: background .15s; }
@@ -162,7 +175,7 @@ button.tile:active, .tile button:active { transform: scale(.95); }
 .field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .field input, .field select { height: 48px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 0 14px; font-size: 16px; font-weight: 400; width: 100%; min-width: 0; }
 .section-head input { border-radius: 12px; border: 1px solid var(--border); background: var(--bg); padding: 0 12px; font-size: 15px; }
-.seg { display: flex; background: var(--surface-2); border-radius: 14px; padding: 4px; gap: 4px; }
+.seg { display: flex; flex-wrap: wrap; background: var(--surface-2); border-radius: 14px; padding: 4px; gap: 4px; }
 .seg button { flex: 1; min-width: 0; height: 38px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); font-weight: 600; font-size: 14px; }
 .seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
 .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
@@ -334,13 +347,14 @@ const D = () => ({ type: 'dpad', up: 'up', down: 'down', left: 'left', right: 'r
 const TEMPLATES = {
   ac: {
     name: 'Ar-condicionado', icon: 'snow', desc: 'Liga, temperatura, modo, ventilação, swing…',
-    commands: [['power', 'Liga/Desliga'], ['temp_up', 'Temperatura +'], ['temp_down', 'Temperatura −'], ['mode', 'Modo'],
-      ['fan', 'Ventilação'], ['swing', 'Swing'], ['turbo', 'Turbo'], ['sleep', 'Sleep'], ['timer', 'Timer'], ['light', 'Luz do display']],
+    // Liga/desliga e temperatura são gerados conforme a configuração do ar (acSyncCommands)
+    commands: [['mode', 'Modo'], ['fan', 'Ventilação'], ['swing', 'Swing'], ['turbo', 'Turbo'], ['sleep', 'Sleep'], ['timer', 'Timer'],
+      ['light', 'Luz do display']],
     layout: [
-      { title: 'Principal', items: [B('power', 'Liga/Desliga', 'power', 'accent', 4)] },
-      { title: 'Ajustes', items: [R('Temp', 'temp_up', 'temp_down'), B('mode', 'Modo', 'mode'), B('fan', 'Ventilação', 'fan'),
-        B('swing', 'Swing', 'swing'), B('turbo', 'Turbo', 'bolt'), B('sleep', 'Sleep', 'moon'), B('timer', 'Timer', 'timer')] },
-      { title: 'Extras', items: [B('light', 'Luz do display', 'light', 'default', 2)] },
+      { title: 'Principal', items: [{ type: 'power', w: 4 }] },
+      { title: 'Temperatura', items: [{ type: 'temp' }] },
+      { title: 'Ajustes', items: [B('mode', 'Modo', 'mode'), B('fan', 'Ventilação', 'fan'), B('swing', 'Swing', 'swing'),
+        B('turbo', 'Turbo', 'bolt'), B('sleep', 'Sleep', 'moon'), B('timer', 'Timer', 'timer'), B('light', 'Luz do display', 'light', 'default', 2)] },
     ],
   },
   tv: {
@@ -471,7 +485,7 @@ class DemoLink {
     const tv = makeProfile('pdtv', 'TV da sala', 'tv', 1);
     this.profiles.set(ac.id, serializeProfile(ac));
     this.profiles.set(tv.id, serializeProfile(tv));
-    ['power', 'temp_up', 'temp_down', 'mode', 'fan', 'swing'].forEach(k => this.sigs.set('pdemo-' + k, { p: 'COOLIX', b: 24, n: 199, code: true }));
+    ['power', 'temp_up', 'temp_down', 'mode', 'fan', 'swing'].forEach(k => this.sigs.set('pdemo-' + k, { p: 'WHIRLPOOL_AC', b: 168, n: 343, code: true }));
     ['power', 'vol_up', 'vol_down', 'mute', 'up', 'down', 'left', 'right', 'ok'].forEach(k => this.sigs.set('pdtv-' + k, { p: 'NEC', b: 32, n: 67, code: true }));
     this.learning = { active: false, key: '', left: 0 };
   }
@@ -544,14 +558,86 @@ const deviceHosted = location.protocol === 'http:' && !['localhost', '127.0.0.1'
 
 function makeProfile(id, name, type, order) {
   const t = TEMPLATES[type] || TEMPLATES.custom;
-  return {
+  const p = {
     id, name, type, order, icon: t.icon, sendRaw: false,
     commands: t.commands.map(([k, label]) => ({ k, label })),
     layout: clone(t.layout),
   };
+  if (type === 'ac') { p.ac = { ...AC_DEFAULTS }; acSyncCommands(p); }
+  return p;
 }
 function serializeProfile(p) {
-  return { name: p.name, type: p.type, icon: p.icon, order: p.order, sendRaw: !!p.sendRaw, commands: p.commands, layout: p.layout };
+  const out = { name: p.name, type: p.type, icon: p.icon, order: p.order, sendRaw: !!p.sendRaw, commands: p.commands, layout: p.layout };
+  if (p.ac) out.ac = p.ac;
+  return out;
+}
+
+// ---------------------------------------------------------------- ar-condicionado
+// power: 'toggle' = um comando que alterna; 'separate' = Ligar e Desligar separados
+// temp:  'step' = botões + e −; 'absolute' = um comando gravado por temperatura
+const AC_DEFAULTS = { power: 'toggle', temp: 'step', step: 1, min: 16, max: 30 };
+const AC_KEY = /^(power|power_on|power_off|temp_up|temp_down|temp_\d+(_5)?)$/;  // comandos gerados
+const snapT = (ac, t) => Math.min(ac.max, Math.max(ac.min, Math.round((t - ac.min) / ac.step) * ac.step + ac.min));
+const fmtT = t => (Math.round(t * 2) / 2).toLocaleString('pt-BR', { minimumFractionDigits: t % 1 ? 1 : 0, maximumFractionDigits: 1 });
+const tempKey = t => 'temp_' + (t % 1 ? Math.floor(t) + '_5' : t);
+function acTemps(ac) {
+  const out = [];
+  for (let t = ac.min; t <= ac.max + 1e-6; t = Math.round((t + ac.step) * 2) / 2) out.push(t);
+  return out;
+}
+function acNeeded(ac) {
+  const list = ac.power === 'separate' ? [['power_on', 'Ligar'], ['power_off', 'Desligar']] : [['power', 'Liga/Desliga']];
+  if (ac.temp === 'step') list.push(['temp_up', 'Temperatura +'], ['temp_down', 'Temperatura −']);
+  else acTemps(ac).forEach(t => list.push([tempKey(t), fmtT(t) + '°']));
+  return list;
+}
+// Ajusta a lista de comandos à configuração do ar: cria os que faltam e tira os
+// gerados que não servem mais (os já gravados ficam, para não perder nada).
+function acSyncCommands(p) {
+  const needed = acNeeded(p.ac);
+  const keys = new Set(needed.map(n => n[0]));
+  const gen = needed.map(([k, label]) => p.commands.find(c => c.k === k) || { k, label });
+  const rest = p.commands.filter(c => !keys.has(c.k) && (!AC_KEY.test(c.k) || hasSig(p, c.k)));
+  p.commands = [...gen, ...rest];
+}
+function acState(p) {
+  const st = store.get('acstate.' + p.id, null) || {};
+  return { temp: snapT(p.ac, Number.isFinite(st.temp) ? st.temp : 24) };
+}
+function acSetTemp(p, t) { store.set('acstate.' + p.id, { temp: t }); }
+
+function pressTemp(p, dir, el) {
+  const ac = p.ac, cur = acState(p).temp;
+  const next = Math.round((cur + dir * ac.step) * 2) / 2;
+  if (next > ac.max + 1e-6 || next < ac.min - 1e-6) return toast(dir > 0 ? `Máximo: ${fmtT(ac.max)}°` : `Mínimo: ${fmtT(ac.min)}°`);
+  const k = ac.temp === 'step' ? (dir > 0 ? 'temp_up' : 'temp_down') : tempKey(next);
+  if (!hasSig(p, k)) return askLearn(p, k);
+  if (!send({ c: 'send', key: sigKey(p, k), raw: !!p.sendRaw })) return;
+  acSetTemp(p, next);
+  if (navigator.vibrate) navigator.vibrate(12);
+  const v = el && el.closest('.thermo') && el.closest('.thermo').querySelector('.tnum');
+  if (v) v.innerHTML = `${fmtT(next)}<small>°C</small>`;
+}
+
+// Acerta a temperatura mostrada (ex.: depois de usar o controle original)
+function openTempSync(p) {
+  let t = acState(p).temp;
+  const absolute = p.ac.temp === 'absolute';
+  const render = () => openSheet(`<h2>Temperatura do ar</h2>
+    <p class="hint">${absolute ? 'Escolha a temperatura. Enviar manda o comando gravado dela.' : 'Use se o ar estiver em outra temperatura (por exemplo, depois de usar o controle original). Nada é enviado.'}</p>
+    <div class="tile thermo" style="box-shadow:none;background:var(--bg)"><button type="button" class="tbtn" data-ts="-1" aria-label="Menos">${icon('minus')}</button>
+      <div class="tval"><span class="tnum">${fmtT(t)}<small>°C</small></span></div>
+      <button type="button" class="tbtn" data-ts="1" aria-label="Mais">${icon('plus')}</button></div>`,
+    [{ label: absolute ? 'Só ajustar' : 'Cancelar', act: () => { if (absolute) { acSetTemp(p, t); renderRemote(); } closeSheet(); } },
+     absolute ? { label: 'Enviar ' + fmtT(t) + '°', cls: 'primary', act: () => {
+        const k = tempKey(t);
+        closeSheet();
+        if (!hasSig(p, k)) return askLearn(p, k);
+        if (send({ c: 'send', key: sigKey(p, k), raw: !!p.sendRaw })) { acSetTemp(p, t); renderRemote(); }
+      } }
+     : { label: 'Salvar', cls: 'primary', act: () => { acSetTemp(p, t); closeSheet(); renderRemote(); } }],
+    { onMount: r => r.querySelectorAll('[data-ts]').forEach(b => b.onclick = () => { t = snapT(p.ac, t + +b.dataset.ts * p.ac.step); render(); }) });
+  render();
 }
 function normalizeProfile(id, d) {
   d = d && typeof d === 'object' ? d : {};
@@ -560,7 +646,18 @@ function normalizeProfile(id, d) {
     order: Number.isFinite(d.order) ? d.order : 99, sendRaw: !!d.sendRaw,
     commands: Array.isArray(d.commands) ? d.commands.filter(c => c && c.k).map(c => ({ k: String(c.k), label: String(c.label || c.k) })) : [],
     layout: Array.isArray(d.layout) ? d.layout.map(s => ({ title: String(s.title || ''), items: Array.isArray(s.items) ? s.items : [] })) : [],
+    ac: d.type === 'ac' ? normalizeAc(d.ac) : undefined,
   };
+}
+function normalizeAc(a) {
+  a = { ...AC_DEFAULTS, ...(a && typeof a === 'object' ? a : {}) };
+  a.power = a.power === 'separate' ? 'separate' : 'toggle';
+  a.temp = a.temp === 'absolute' ? 'absolute' : 'step';
+  a.step = +a.step === 0.5 ? 0.5 : 1;
+  a.min = Math.round(+a.min * 2) / 2 || 16;
+  a.max = Math.round(+a.max * 2) / 2 || 30;
+  if (a.max <= a.min) a.max = a.min + 1;
+  return a;
 }
 
 const active = () => app.profiles.find(p => p.id === app.activeId) || app.profiles[0] || null;
@@ -777,6 +874,10 @@ function updateRing() {
 function renderLearn() {
   const L = app.learn, cur = learnCurrent(); if (!L || !cur) return;
   const label = cmdLabel(cur.p, cur.k);
+  const tm = /^temp_(\d+)(_5)?$/.exec(cur.k);
+  const howTo = tm
+    ? `No controle original, aperte o botão que deixa o ar em ${esc(label)} (por exemplo, deixe um passo abaixo e aperte + uma vez).`
+    : 'Aponte o controle original para o receptor e aperte o botão uma vez.';
   const step = L.keys.length > 1 ? `<div class="eyebrow">${L.idx + 1} de ${L.keys.length} · ${esc(cur.p.name)}</div>` : `<div class="eyebrow">${esc(cur.p.name)}</div>`;
   const hasNext = L.idx < L.keys.length - 1;
   const nextLabel = hasNext ? cmdLabel(cur.p, L.keys[L.idx + 1]) : '';
@@ -785,8 +886,8 @@ function renderLearn() {
     body = `<div class="learn">${step}
       <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
         <div class="center pulse">${icon('remote')}</div></div>
-      <h2>Aperte “${esc(label)}”</h2>
-      <p>Aponte o controle original para o receptor e aperte o botão uma vez. <span id="ringSecs" class="mono"></span></p></div>`;
+      <h2>${tm ? 'Gravar ' + esc(label) : 'Aperte “' + esc(label) + '”'}</h2>
+      <p>${howTo} <span id="ringSecs" class="mono"></span></p></div>`;
     actions = [{ label: 'Cancelar', act: () => closeLearn(true) }];
   } else if (L.phase === 'ok') {
     const i = L.info || {};
@@ -886,6 +987,25 @@ function renderItem(p, it, si, ii) {
     const part = (k, ic, cls) => `<button type="button" class="rk ${cls} ${hasSig(p, k) ? '' : 'missing'}" data-cmd="${esc(k)}" aria-label="${esc(cmdLabel(p, k))}">${icon(ic)}${missDot(p, k)}</button>`;
     return `<div class="tile rocker" ${at}>${part(it.up, 'plus', 'up')}<span class="rk-label">${esc(it.label || '')}</span>${part(it.down, 'minus', 'down')}</div>`;
   }
+  if (it.type === 'power' && p.ac) {
+    const w = Math.min(4, Math.max(1, +it.w || 4));
+    if (p.ac.power === 'separate') {
+      const part = (k, cls, label) => `<button type="button" class="${cls} ${hasSig(p, k) ? '' : 'missing'}" data-cmd="${k}">${icon('power')}<span class="tl">${label}</span>${missDot(p, k)}</button>`;
+      return `<div class="tile split" style="grid-column: span ${w}" ${at}>${part('power_on', 'on-btn', 'Ligar')}${part('power_off', 'off-btn', 'Desligar')}</div>`;
+    }
+    return `<button type="button" class="tile c-accent ${hasSig(p, 'power') ? '' : 'missing'}" style="grid-column: span ${w}" ${at} data-cmd="power">${icon('power')}<span class="tl">Liga/Desliga</span>${missDot(p, 'power')}</button>`;
+  }
+  if (it.type === 'temp' && p.ac) {
+    const ac = p.ac, t = acState(p).temp;
+    const keys = ac.temp === 'step' ? ['temp_up', 'temp_down'] : acTemps(ac).map(tempKey);
+    const rec = keys.filter(k => hasSig(p, k)).length;
+    const sub = ac.temp === 'step' ? `Passo de ${fmtT(ac.step)}°` : `${rec} de ${keys.length} temperaturas gravadas`;
+    const dot = rec < keys.length ? '<span class="miss-dot"></span>' : '';
+    return `<div class="tile thermo" ${at}>
+      <button type="button" class="tbtn" data-temp="-1" aria-label="Diminuir temperatura">${icon('minus')}${ac.temp === 'step' ? missDot(p, 'temp_down') : ''}</button>
+      <button type="button" class="tval" data-tempset="1" aria-label="Acertar temperatura"><span class="tnum">${fmtT(t)}<small>°C</small></span><span class="tsub">${sub}</span></button>
+      <button type="button" class="tbtn" data-temp="1" aria-label="Aumentar temperatura">${icon('plus')}${ac.temp === 'step' ? missDot(p, 'temp_up') : ''}</button>${ac.temp === 'step' ? '' : dot}</div>`;
+  }
   if (it.type === 'dpad') {
     const part = (k, cls, inner) => `<button type="button" class="dp ${cls} ${hasSig(p, k) ? '' : 'missing'}" data-cmd="${esc(k)}" aria-label="${esc(cmdLabel(p, k))}">${inner}${missDot(p, k)}</button>`;
     return `<div class="dpad-wrap" ${at}><div class="dpad">${part(it.up, 'up', icon('up'))}${part(it.left, 'left', icon('left'))}`
@@ -959,8 +1079,16 @@ function openItemEditor(si, ii) {
   const render = () => {
     const t = draft.type;
     let fields = `<div class="field">Tipo<div class="seg" role="group">
-      ${[['button', 'Botão'], ['rocker', 'Par + / −'], ['dpad', 'Direcional']].map(([v, l]) => `<button type="button" data-type="${v}" class="${t === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
-    if (t === 'button') {
+      ${[['button', 'Botão'], ['rocker', 'Par + / −'], ['dpad', 'Direcional'], ...(p.ac ? [['power', 'Liga/Desliga do ar'], ['temp', 'Temperatura do ar']] : [])]
+        .map(([v, l]) => `<button type="button" data-type="${v}" class="${t === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+    if (t === 'power' || t === 'temp') {
+      fields += `<p class="hint">${t === 'power'
+        ? (p.ac.power === 'separate' ? 'Mostra os botões Ligar e Desligar.' : 'Mostra um botão Liga/Desliga.')
+        : (p.ac.temp === 'step' ? `Mostra a temperatura com + e −. Cada toque envia Temperatura + ou − (passo de ${fmtT(p.ac.step)}°).` : 'Mostra a temperatura com + e −. Cada toque envia o comando gravado da nova temperatura.')}
+        A lógica é definida em Perfis → editar este controle.</p>`;
+      if (t === 'power') fields += `<div class="field">Largura<div class="seg">${[1, 2, 3, 4].map(n => `<button type="button" data-w="${n}" class="${(+draft.w || 4) === n ? 'on' : ''}">${n === 4 ? 'Linha toda' : n}</button>`).join('')}</div></div>`;
+    } else
+ if (t === 'button') {
       fields += `<label class="field">Comando<select id="fCmd">${cmdOptions(draft.cmd, true)}</select></label>
         <label class="field" id="fNewWrap" ${draft.cmd === '__new' ? '' : 'hidden'}>Nome do novo comando<input id="fNew" type="text" maxlength="30" placeholder="Ex.: Frio 23°" value="${esc(draft.newName)}"></label>
         <label class="field">Texto do botão<input id="fLabel" type="text" maxlength="24" placeholder="${esc(cmdLabel(p, draft.cmd) || 'Texto')}" value="${esc(draft.label)}"></label>
@@ -1027,6 +1155,10 @@ function openItemEditor(si, ii) {
       out = { type: 'button', cmd, label: (draft.label || '').trim(), icon: draft.icon || '', color: draft.color || 'default', w: +draft.w || 1 };
     } else if (draft.type === 'rocker') {
       out = { type: 'rocker', label: (draft.label || '').trim(), up: draft.up || '', down: draft.down || '' };
+    } else if (draft.type === 'power') {
+      out = { type: 'power', w: +draft.w || 4 };
+    } else if (draft.type === 'temp') {
+      out = { type: 'temp' };
     } else {
       out = { type: 'dpad', up: draft.up || '', down: draft.down || '', left: draft.left || '', right: draft.right || '', ok: draft.ok || '' };
     }
@@ -1122,7 +1254,28 @@ function renderProfiles() {
 function openProfileEditor(p) {
   if (!requireLink()) return;
   const isNew = !p;
-  const draft = isNew ? { name: '', type: 'ac', icon: TEMPLATES.ac.icon, sendRaw: false } : { name: p.name, type: p.type, icon: p.icon, sendRaw: p.sendRaw };
+  const draft = isNew ? { name: '', type: 'ac', icon: TEMPLATES.ac.icon, sendRaw: false, ac: { ...AC_DEFAULTS } }
+    : { name: p.name, type: p.type, icon: p.icon, sendRaw: p.sendRaw, ac: { ...(p.ac || AC_DEFAULTS) } };
+  let resetLayout = false;
+  const range = (a, b) => { const o = []; for (let v = a; v <= b; v++) o.push(v); return o; };
+  const acFields = () => {
+    const a = draft.ac;
+    const segs = (name, opts, cur) => `<div class="seg">${opts.map(([v, l]) => `<button type="button" data-ac="${name}" data-v="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+    const n = a.temp === 'absolute' ? acTemps(a).length : 2;
+    return `<div class="card" style="background:var(--bg);box-shadow:none;padding:16px">
+      <h2>Ar-condicionado</h2>
+      <div class="field">Liga/desliga${segs('power', [['toggle', 'Um botão alterna'], ['separate', 'Ligar e Desligar']], a.power)}
+        <span class="hint">${a.power === 'toggle' ? 'O controle tem um botão só, que liga e desliga.' : 'O controle manda um comando para ligar e outro para desligar.'}</span></div>
+      <div class="field">Temperatura${segs('temp', [['step', 'Botões + e −'], ['absolute', 'Um comando por temperatura']], a.temp)}
+        <span class="hint">${a.temp === 'step' ? 'Grave Temperatura + e Temperatura −. A página conta a temperatura a cada toque.' : `Cada temperatura é gravada separada (${n} comandos). Bom para controles que mandam o estado completo a cada toque.`}</span></div>
+      <div class="field">Passo${segs('step', [['1', '1 °C'], ['0.5', '0,5 °C']], a.step)}</div>
+      <div class="row">
+        <label class="field grow">Mínima<select data-acsel="min">${range(10, 24).map(v => `<option value="${v}" ${a.min === v ? 'selected' : ''}>${v} °C</option>`).join('')}</select></label>
+        <label class="field grow">Máxima<select data-acsel="max">${range(25, 35).map(v => `<option value="${v}" ${a.max === v ? 'selected' : ''}>${v} °C</option>`).join('')}</select></label>
+      </div>
+      ${!isNew ? `<label class="switch"><span>Recriar a tela padrão do ar<br><span class="hint">Troca a tela deste controle pela tela padrão (Liga/Desliga, Temperatura e ajustes). Os comandos gravados continuam.</span></span><input id="fReset" type="checkbox" ${resetLayout ? 'checked' : ''}></label>` : ''}
+    </div>`;
+  };
   let iconTouched = !isNew;
   const render = () => {
     const tpls = isNew ? `<div class="field">Tipo de controle<div class="tpl-grid">${Object.entries(TEMPLATES).map(([k, t]) =>
@@ -1130,6 +1283,7 @@ function openProfileEditor(p) {
     openSheet(`<h2>${isNew ? 'Novo controle' : 'Editar controle'}</h2>
       <label class="field">Nome<input id="fName" type="text" maxlength="24" placeholder="Ex.: Ar do quarto" value="${esc(draft.name)}"></label>
       ${tpls}
+      ${draft.type === 'ac' ? acFields() : ''}
       <div class="field">Ícone<div class="icon-grid">${PICK_ICONS.map(n => `<button type="button" data-icon="${n}" class="${draft.icon === n ? 'on' : ''}" aria-label="${n}">${icon(n)}</button>`).join('')}</div></div>
       <label class="switch"><span>Enviar como sinal bruto<br><span class="hint">Repete os tempos gravados em vez de recriar o código. Ative se o aparelho não responder aos comandos gravados.</span></span><input id="fRaw" type="checkbox" ${draft.sendRaw ? 'checked' : ''}></label>`,
     [
@@ -1139,16 +1293,27 @@ function openProfileEditor(p) {
       onMount: root => {
         root.querySelectorAll('[data-tpl]').forEach(b => b.onclick = () => { collect(root); draft.type = b.dataset.tpl; if (!iconTouched) draft.icon = TEMPLATES[draft.type].icon; render(); });
         root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => { collect(root); draft.icon = b.dataset.icon; iconTouched = true; render(); });
+        root.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => {
+          collect(root);
+          draft.ac[b.dataset.ac] = b.dataset.ac === 'step' ? +b.dataset.v : b.dataset.v;
+          render();
+        });
+        root.querySelectorAll('[data-acsel]').forEach(sel => sel.onchange = () => { collect(root); render(); });
       },
     });
   };
-  const collect = root => { draft.name = $('#fName', root).value; draft.sendRaw = $('#fRaw', root).checked; };
+  const collect = root => {
+    draft.name = $('#fName', root).value; draft.sendRaw = $('#fRaw', root).checked;
+    root.querySelectorAll('[data-acsel]').forEach(sel => draft.ac[sel.dataset.acsel] = +sel.value);
+    const r = $('#fReset', root); if (r) resetLayout = r.checked;
+  };
   const save = () => {
     collect($('#sheetIn'));
     const name = draft.name.trim() || TEMPLATES[draft.type].name;
     if (isNew) {
       const np = makeProfile(newProfileId(), name, draft.type, app.profiles.reduce((m, x) => Math.max(m, x.order + 1), 0));
       np.icon = draft.icon; np.sendRaw = draft.sendRaw;
+      if (np.ac) { np.ac = normalizeAc(draft.ac); acSyncCommands(np); }
       app.profiles.push(np);
       app.activeId = np.id; store.set('active', np.id);
       saveProfile(np);
@@ -1157,6 +1322,11 @@ function openProfileEditor(p) {
       setView(np.commands.length ? 'commands' : 'remote');
     } else {
       Object.assign(p, { name, icon: draft.icon, sendRaw: draft.sendRaw });
+      if (p.type === 'ac') {
+        p.ac = normalizeAc(draft.ac);
+        acSyncCommands(p);
+        if (resetLayout) p.layout = clone(TEMPLATES.ac.layout);
+      }
       saveProfile(p); closeSheet(); renderAll();
     }
   };
@@ -1295,6 +1465,8 @@ function setup() {
         const it = e.target.closest('[data-s][data-i]'); if (it) return openItemEditor(+it.dataset.s, +it.dataset.i);
         return;
       }
+      const tb = e.target.closest('[data-temp]'); if (tb) return pressTemp(p, +tb.dataset.temp, tb);
+      if (e.target.closest('[data-tempset]')) return openTempSync(p);
       const c = e.target.closest('[data-cmd]'); if (c) return press(c.dataset.cmd, c);
     }
 

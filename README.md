@@ -82,6 +82,19 @@ Não há protocolos prontos: cada controle é um **perfil**, e você grava os bo
    - adicionar **botões** e escolher o comando, o texto, o ícone, a cor e a largura (1 a 4 colunas);
    - usar um **par + / −** (volume, temperatura, canal) ou um **direcional** (setas + OK).
 
+**Ar-condicionado:** em **Perfis → editar o controle** você escolhe como o controle original funciona. A lista de comandos se ajusta sozinha a essa escolha.
+
+| Opção | Escolhas | Comandos para gravar |
+|---|---|---|
+| Liga/desliga | **Um botão alterna** | `power` |
+| | **Ligar e Desligar** separados | `power_on` e `power_off` |
+| Temperatura | **Botões + e −** | `temp_up` e `temp_down`. A página conta a temperatura a cada toque. |
+| | **Um comando por temperatura** | `temp_16`, `temp_16_5`, `temp_17`... um por temperatura da faixa |
+| Passo | **1 °C** ou **0,5 °C** | — |
+| Faixa | mínima e máxima | — |
+
+Na tela, o bloco de temperatura mostra o valor atual com − e +. Tocar no número acerta o valor mostrado (por exemplo, depois de usar o controle original). Com "um comando por temperatura", ele também envia a temperatura escolhida. Para gravar uma temperatura como `temp_23_5`, aperte no controle original o botão que deixa o ar em 23,5° (por exemplo, deixe em 23° e aperte + uma vez). A opção **Recriar a tela padrão do ar** troca a tela de um controle antigo pela tela nova.
+
 Os perfis e os sinais ficam guardados no **receptor**, então aparecem em qualquer celular que se conectar a ele. O celular também guarda uma cópia para mostrar a tela sem conexão.
 
 **Se o aparelho não responder a um comando gravado:** em **Perfis → editar**, ative **Enviar como sinal bruto**. O emissor passa a repetir os tempos gravados em vez de recriar o código do protocolo. **Ajustes → Último sinal recebido** mostra o que o receptor leu de um controle.
