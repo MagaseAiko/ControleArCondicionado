@@ -10,6 +10,10 @@
 #include "link_protocol.h"
 #include "link_ac.h"
 
+#ifndef IR_LED_INVERTED
+#define IR_LED_INVERTED 0  // 1 = transistor PNP (LED acende com o pino em 0)
+#endif
+
 #ifndef IR_LED_PIN
 #define IR_LED_PIN 3
 #endif
@@ -20,8 +24,8 @@
 
 static uint8_t BROADCAST[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-static IRsend irsend(IR_LED_PIN);
-static IRac irac(IR_LED_PIN);
+static IRsend irsend(IR_LED_PIN, IR_LED_INVERTED);
+static IRac irac(IR_LED_PIN, IR_LED_INVERTED);
 
 // Fila de pacotes recebidos (o callback do ESP-NOW só copia; o loop processa)
 struct RxPacket {
@@ -87,7 +91,7 @@ static void sendHello() {
 // alternar. Montamos o sinal como o controle original faria.
 // powerAbs: bit de energia é o estado (Consul); senão é "alternar" (Whirlpool).
 static bool sendWhirlpool(const stdAc::state_t &st, bool prevPower, uint8_t cmd, bool powerAbs) {
-  IRWhirlpoolAc w(IR_LED_PIN);
+  IRWhirlpoolAc w(IR_LED_PIN, IR_LED_INVERTED);
   w.begin();
   w.setModel((whirlpool_ac_remote_model_t)st.model);
   w.setMode(w.convertMode(st.mode));

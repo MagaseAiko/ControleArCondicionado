@@ -11,7 +11,7 @@ Montagem do **Receptor (ESP32 DevKit V1 / ESP-WROOM-32)** e do **Emissor (ESP-01
 | 1 | Receptor IR 38 kHz: VS1838B, TSOP38238 ou módulo KY-022 | Lê o controle original |
 | 1 a 2 | LED infravermelho 940 nm, 5 mm (ex.: TSAL6200, IR333) | Use 2 para mais alcance |
 | 2 | Botão táctil (push button) | GRAVAR e ENVIAR |
-| 1 | Transistor NPN: 2N2222, BC337 ou S8050 | Driver do LED IR |
+| 1 | Transistor NPN: 2N2222, BC337 ou S8050 (ou PNP BC557, ver abaixo) | Driver do LED IR |
 | 1 | Resistor 1 kΩ | Base do transistor |
 | 1 | Resistor 10 kΩ | Base → GND (mantém o LED desligado no boot) |
 | 1 | Resistor do LED IR: 22 Ω, 33 Ω ou 39 Ω (ver tabela) | 1/4 W |
@@ -154,6 +154,7 @@ Ligado direto no pino, o ESP-01 fornece ~12 mA, e o LED alcança só 1 a 2 m. Co
 - **1 kΩ na base:** limita a corrente do GPIO (~2,6 mA) e já satura o transistor para até ~250 mA.
 - **10 kΩ base→GND:** garante o LED **apagado** enquanto o ESP-01 inicia ou é gravado (o RX fica flutuando nesse momento).
 - **Atenção à pinagem do transistor:** 2N2222 (TO-92, face chata para você) = E-B-C. **BC337** = C-B-E (invertido!). S8050 = E-B-C. Confira o datasheet.
+- **BC547 / BC548 / BC549 também servem** (pinagem C-B-E). Eles aguentam só 100 mA, então use um resistor do LED maior que o da tabela: **33 Ω no 3,3 V** (~55 mA), **47 Ω no 5 V com 1 LED** (~75 mA) ou **33 Ω no 5 V com 2 LEDs em série** (~65 mA).
 
 ### Valor do resistor do LED (R_LED)
 
@@ -168,6 +169,34 @@ Conta: `R = (VLED − Vf_LED − Vce) / I`, com Vf ≈ 1,35 V (LED IR 940 nm), V
 - 1/4 W basta: o LED só pulsa (portadora de 38 kHz com ~33% de ciclo) durante o envio.
 - Ao alimentar o LED com 5 V, o **GND do 5 V e o GND do ESP-01 precisam estar ligados**. O GPIO3 continua em 3,3 V, só o coletor fica no 5 V.
 - **Se 5 V estiver disponível, prefira a opção de 5 V com 2 LEDs:** é a de maior alcance.
+
+### Alternativa com transistor PNP (BC557, BC327, 2N3906)
+
+O PNP fica do lado positivo e acende o LED com o pino em **0**. Por isso a lógica do firmware é invertida.
+
+```
+ 3V3 ───────────┬──────────┐
+                │          E (emissor)
+             [10 kΩ]       │
+                │     B ───┤  BC557
+ GPIO3 ──[1 kΩ]─┴──────┘   │
+                           C (coletor)
+                           │
+                       [R_LED 33 Ω]
+                           │
+                          ─┴─  LED IR (anodo em cima)
+                          \ /
+                          ─┬─
+                           │
+ GND ──────────────────────┴──── GND
+```
+
+- **No firmware**, em `Emissor/platformio.ini`, troque para `-DIR_LED_INVERTED=1`. Sem isso o LED fica aceso o tempo todo e o sinal sai invertido.
+- **O emissor do BC557 vai no 3,3 V, nunca no 5 V.** O GPIO só chega a 3,3 V. Com o emissor no 5 V, o transistor nunca desliga e o LED fica sempre aceso.
+- **10 kΩ base→emissor (3V3):** mantém o LED **apagado** enquanto o ESP-01 inicia.
+- **R_LED = 33 Ω (~55 mA):** o BC557 aguenta só 100 mA. Não use 22 Ω com ele.
+- **Pinagem do BC557** (TO-92, face chata para você): **C-B-E**.
+- O alcance fica um pouco menor que o do NPN no 5 V, mas basta para um cômodo (~4–6 m).
 
 ### Alternativa sem transistor (só para teste)
 

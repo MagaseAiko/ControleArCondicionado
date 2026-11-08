@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "Receptor",
+			"path": "Receptor"
+		},
+		{
+			"name": "Emissor",
+			"path": "Emissor"
+		}
+	],
+	"settings": {}
+}
