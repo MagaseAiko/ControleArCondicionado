@@ -1,15 +1,15 @@
-# AR-CTRL 2000: controle de ar-condicionado
+# Controle universal IR (ESP32 + ESP-01)
 
 Projeto com três partes:
 
 | Parte | Hardware | Função |
 |---|---|---|
-| **Receptor** (`Receptor/`) | ESP32 DevKit V1 (ESP-WROOM-32) | Concentra a lógica: lê o controle original, grava sinais, guarda o estado do ar e conversa com o celular (BLE) e com o emissor |
+| **Receptor** (`Receptor/`) | ESP32 DevKit V1 (ESP-WROOM-32) | Grava os sinais do controle original, guarda os perfis e os sinais e conversa com o celular (BLE) e com o emissor |
 | **Emissor** (`Emissor/`) | ESP-01 (1MB) + LED IR | Recebe comandos por ESP-NOW e dispara o LED infravermelho |
-| **Página** (`docs/index.html`) | Celular | Controle remoto completo + gravação de sinais (controle universal) |
+| **Página** (`docs/index.html`) | Celular | Perfis de controle com tela editável + gravação de sinais |
 
 ```
- Celular ──BLE──► Receptor (ESP32) ──ESP-NOW──► Emissor (ESP-01) ──IR──► Ar-condicionado
+ Celular ──BLE──► Receptor (ESP32) ──ESP-NOW──► Emissor (ESP-01) ──IR──► Ar, TV, ventilador...
                                ▲
                      controle original (IR)
 ```
@@ -53,7 +53,7 @@ cd Receptor && pio run -e esp32-s2-saola-1 -t upload   # outra placa
 
 No modo Wi-Fi (só ESP32-S2), o build executa `tools/embed_web.py`, que compacta `docs/index.html` dentro do firmware.
 
-O Emissor pareia sozinho: ao ligar, ele se anuncia por broadcast e o Receptor guarda o primeiro emissor que ouvir. Para trocar de emissor, use CONFIG → Esquecer.
+O Emissor pareia sozinho: ao ligar, ele se anuncia por broadcast e o Receptor guarda o primeiro emissor que ouvir. Para trocar de emissor, use **Ajustes → Esquecer emissor**.
 
 Os dois usam o **canal Wi-Fi 1** (`LINK_CHANNEL` em `common/link_protocol.h`).
 
@@ -68,55 +68,36 @@ O Web Bluetooth só funciona em páginas HTTPS. A página fica em `docs/` para o
 Navegadores: **Chrome no Android**, ou **Bluefy** no iPhone (o Safari não tem Web Bluetooth).
 Só no ESP32-S2 (modo Wi-Fi) não precisa de HTTPS: conecte o celular na rede `ArCondicionado-XXXX` e abra `http://192.168.4.1`. Se o Android avisar "rede sem internet", escolha manter a conexão.
 
-A aba **CONFIG → Modo demo** simula o receptor, para testar a página sem hardware.
+**Ajustes → Modo demonstração** simula o receptor, para conhecer a página sem hardware.
 
 ## Como usar
 
-### Modo PROTOCOLO (recomendado)
+Não há protocolos prontos: cada controle é um **perfil**, e você grava os botões do controle original.
 
-1. Aba **GRAVAR** → GRAVAR → aperte qualquer botão do controle original do ar.
-2. Se o protocolo for reconhecido (Samsung, LG, Gree, Midea, Daikin, Fujitsu e mais de 70 outros), ele é configurado automaticamente.
-3. A aba **CONTROLE** passa a controlar tudo: liga/desliga, modo, temperatura, ventilação, aletas, turbo, eco etc. O receptor gera o sinal completo, e o emissor envia com o `IRac`.
-4. Se você usar o controle original, o receptor lê o sinal e atualiza o estado na página.
+1. **Perfis → Novo controle.** Dê um nome e escolha o tipo: Ar-condicionado, TV, Ventilador, Som ou Personalizado. O tipo traz uma lista de **comandos base** e uma tela inicial. O Personalizado começa vazio.
+2. **Comandos → Gravar pendentes.** A página pede um comando de cada vez. Aponte o controle original para o receptor e aperte o botão correspondente. Cada comando pode ser testado, regravado, renomeado ou apagado, e você pode criar os seus (ex.: "Frio 23°", "Netflix").
+3. **Controle.** Toque nos botões para enviar. Um ponto vermelho marca o que ainda não foi gravado. Tocar nele abre a gravação.
+4. **Controle → Editar** muda a tela daquele perfil:
+   - adicionar, mover, apagar e renomear **seções**;
+   - adicionar **botões** e escolher o comando, o texto, o ícone, a cor e a largura (1 a 4 colunas);
+   - usar um **par + / −** (volume, temperatura, canal) ou um **direcional** (setas + OK).
 
-Se a detecção não funcionar, escolha o protocolo em **CONFIG → Protocolo do ar**.
+Os perfis e os sinais ficam guardados no **receptor**, então aparecem em qualquer celular que se conectar a ele. O celular também guarda uma cópia para mostrar a tela sem conexão.
 
-**Assistente de marca (Elgin / Philco / Consul):** em **CONFIG → Assistente de marca**, escolha a marca e toque em TESTAR em cada candidato até o ar responder; depois toque em USAR. Os protocolos da marca escolhida também aparecem primeiro na lista de protocolos.
+**Se o aparelho não responder a um comando gravado:** em **Perfis → editar**, ative **Enviar como sinal bruto**. O emissor passa a repetir os tempos gravados em vez de recriar o código do protocolo. **Ajustes → Último sinal recebido** mostra o que o receptor leu de um controle.
 
-- **Elgin:** não tem protocolo próprio. Usa o do fabricante de cada modelo (Midea/Coolix, Gree, AUX, TCL, Haier...).
-- **Philco:** é da Britânia e também não tem protocolo próprio. Usa o do fabricante de cada linha (Gree, TCL, Midea, AUX...), então o protocolo muda conforme o modelo.
-- **Consul:** é da Whirlpool. O receptor já vem configurado para o **Consul CBK12BXNA** (controle W11683858): `WHIRLPOOL_AC`, modelo 2 (DG11J1-91, 16–30°). Use o modelo 1 (DG11J1-3A/04, 18–32°) se a temperatura no display não bater com a da página. Gravar um botão do controle original corrige o protocolo e o modelo sozinho, se forem outros. Cada sinal leva o "botão" que mudou (temperatura, modo, ventilação...), como o controle original. No Consul, o bit de energia diz o estado (1 = ligado). No Whirlpool de outros países, ele só alterna o liga/desliga. Isso se escolhe em **CONFIG → Liga/desliga Whirlpool** (padrão: Estado). O receptor também detecta sozinho quando você usa o controle original. **CONFIG → Último sinal recebido** mostra o que o receptor leu do controle, para diagnóstico.
-
-### Modo APRENDIDO (qualquer ar, inclusive protocolo desconhecido)
-
-Cada botão da página procura um sinal gravado com um nome padrão. Grave pela aba **GRAVAR → Mapa de funções**:
-
-| Ação na página | Sinais procurados (em ordem) |
-|---|---|
-| Desligar | `power_off`, `power` |
-| Ligar | `<modo>_<temp>` (ex.: `cool_23`), `power_on`, `power` |
-| Mudar modo/temperatura | `<modo>_<temp>`, depois `mode_<modo>` / `mode`, `temp_<t>` ou `temp_up`/`temp_down` repetido |
-| Ventilação | `fan_<auto/min/low/medium/high/max>`, `fan` |
-| Aleta vertical | `swing_off` / `swing_<posição>`, `swing_on`, `swing` |
-| Aleta horizontal | `swingh_off` / `swingh_<posição>`, `swingh_on`, `swingh` |
-| Turbo, eco, silencioso, luz, limpar, filtro, bipe, sono | `<função>_on` / `<função>_off`, `<função>` |
-
-Como o controle de ar envia o estado completo a cada toque, o jeito mais confiável é gravar `cool_16` … `cool_30` (e `heat_*` se usar aquecimento) mais `power_off`.
-
-### Controle universal
-
-Na aba GRAVAR, escolha "sinal livre", dê um nome (ex.: `tv_liga`) e grave. Os sinais ficam na lista **Sinais salvos**, onde podem ser enviados, renomeados ou apagados.
+Os botões físicos do receptor continuam funcionando: **GRAVAR** guarda um sinal no espaço rápido (`rapido`) e **ENVIAR** repete esse sinal.
 
 ## Estrutura
 
 ```
-common/            protocolo ESP-NOW compartilhado (link_protocol.h, link_ac.h)
-Emissor/src/       main.cpp: ESP-NOW → IRsend / IRac
+common/            protocolo ESP-NOW compartilhado (link_protocol.h)
+Emissor/src/       main.cpp: ESP-NOW → IRsend (código decodificado ou sinal bruto)
 Receptor/src/
-  main.cpp         lógica: gravação, fila de envios, modos, botões, LED
+  main.cpp         lógica: gravação, fila de envios, botões, LED
   link.*           ESP-NOW (pareamento, envio com confirmação, sinais em pedaços)
   signals.*        sinais gravados no LittleFS
-  ac_json.*        estado do ar <-> JSON
+  profiles.*       perfis (JSON montado pela página) no LittleFS
   transport_ble.*  Web Bluetooth (NimBLE)
   transport_wifi.* rede Wi-Fi própria + servidor da página
 Receptor/tools/    embed_web.py (embute a página no firmware)
@@ -127,5 +108,6 @@ docs/index.html    página do celular
 
 Mensagens JSON, uma por linha. Pelo BLE, a página escreve na característica `…0002` e recebe notificações em `…0003`. Pelo Wi-Fi, a página faz `POST /api`.
 
-- Página → receptor: `{"c":"hello"}`, `{"c":"ac","ac":{"power":true,"mode":"cool","temp":23,...}}`, `{"c":"learn","key":"cool_23"}`, `{"c":"send","key":"..."}`, `{"c":"del"|"rename"|"setProto"|"setMode"|"ping"|"unpair"|"protocols"|"resend", ...}`
-- Receptor → página: `{"t":"status"|"signals"|"protocols"|"learned"|"learnTimeout"|"sent"|"missing"|"remote"|"error", ...}`
+- Página → receptor: `{"c":"hello"}`, `{"c":"learn","key":"pab12-power"}`, `{"c":"send","key":"pab12-power","raw":false}`, `{"c":"saveProfile","id":"pab12","data":{...}}`, `{"c":"delProfile","id":"pab12"}`, `{"c":"del"|"rename"|"ping"|"unpair"|"profiles"|"list"|"learnCancel", ...}`
+- Receptor → página: `{"t":"status"|"signals"|"profile"|"profilesDone"|"profileSaved"|"profileDeleted"|"learned"|"learnTimeout"|"sent"|"ir"|"error", ...}`
+- Os sinais de um perfil usam a chave `<id do perfil>-<comando>`. Apagar o perfil apaga esses sinais.

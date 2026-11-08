@@ -13,7 +13,7 @@
 // serve a página. O celular faz POST /api com uma mensagem JSON por linha e
 // recebe de volta um array com as mensagens pendentes do Receptor.
 
-#define OUTBOX_MAX 30
+#define OUTBOX_MAX 60  // "hello" manda um perfil por mensagem
 #define CLIENT_TIMEOUT_MS 5000
 
 namespace {

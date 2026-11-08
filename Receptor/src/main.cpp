@@ -1,27 +1,22 @@
-// Receptor (ESP32): toda a lógica do controle de ar-condicionado.
+// Receptor (ESP32): controle remoto universal.
 //
-// Dois modos de controle:
-//  - PROTOCOLO: o protocolo do ar é conhecido (detectado ao gravar o controle
-//    original ou escolhido na página). O estado completo (liga, modo, temp,
-//    ventilação...) é enviado ao Emissor, que gera o sinal com o IRac.
-//  - APRENDIDO: cada função usa um sinal gravado com um nome padrão
-//    (power_on, cool_23, temp_up, fan_high...). Veja o README.
+// Grava sinais IR do controle original e manda o Emissor (ESP-01) repetir.
+// Os sinais ficam organizados em perfis (um por controle remoto), montados
+// pela página: o receptor só guarda os perfis e os sinais, e envia o que a
+// página pedir.
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <Preferences.h>
 #include <Adafruit_NeoPixel.h>
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
-#include <IRac.h>
 #include <IRutils.h>
 #include <deque>
 #include <vector>
 #include "config.h"
 #include "link.h"
-#include "link_ac.h"
 #include "signals.h"
-#include "ac_json.h"
+#include "profiles.h"
 #include "transport.h"
 
 #ifndef IR_TIMER
@@ -29,15 +24,6 @@
 #endif
 
 // ---------------------------------------------------------------- estado
-
-static Preferences prefs;
-static stdAc::state_t ac;  // estado em que o ar deve estar
-static bool learnedMode = false;
-// Whirlpool: o bit de energia é o estado (1 = ligado), como no Consul, e não
-// "alternar" (Whirlpool original). Detectado sozinho pelo controle original.
-static bool powerAbs = true;
-static bool stateDirty = false;
-static uint32_t stateDirtySince = 0;
 
 static IRrecv irrecv(PIN_IR_RX, IR_CAPTURE_BUFFER, IR_TIMEOUT_MS, true, IR_TIMER);
 static decode_results results;
@@ -49,12 +35,11 @@ struct Learning {
 };
 static Learning learning;
 
-enum class JobKind : uint8_t { Ac, Signal, Ping };
+enum class JobKind : uint8_t { Signal, Ping };
 struct Job {
   JobKind kind;
-  stdAc::state_t ac;
-  stdAc::state_t prev;     // estado antes deste envio (protocolos com "alternar")
   String key;
+  bool forceRaw = false;  // envia os tempos gravados, sem recodificar o protocolo
 };
 static std::deque<Job> jobs;
 
@@ -67,8 +52,6 @@ struct Pending {
 };
 static Pending pending;
 static uint32_t lastJobDone = 0;
-
-static std::vector<String> missingKeys;
 
 // ---------------------------------------------------------------- LED de status
 // RGB: cores abaixo. LED simples (PIN_LED): aceso = ok, pisca lento = emissor
@@ -137,21 +120,11 @@ static void notifyError(const String &msg) {
 
 static String protoName(int16_t p) { return p < 0 ? String("RAW") : typeToString((decode_type_t)p); }
 
-static bool protocolReady() {
-  return ac.protocol != decode_type_t::UNKNOWN && IRac::isProtocolSupported(ac.protocol);
-}
-
 static void sendStatus() {
   JsonDocument d;
   d["t"] = "status";
   d["fw"] = FW_VERSION;
   d["tr"] = transportName();
-  d["learnedMode"] = learnedMode;
-  d["proto"] = ac.protocol == decode_type_t::UNKNOWN ? String("") : typeToString(ac.protocol);
-  d["protoId"] = (int)ac.protocol;
-  d["model"] = ac.model;
-  d["protoOk"] = protocolReady();
-  d["powerAbs"] = powerAbs;
 
   JsonObject em = d["emitter"].to<JsonObject>();
   em["paired"] = linkPaired();
@@ -167,7 +140,6 @@ static void sendStatus() {
 
   d["busy"] = pending.active;
   d["queue"] = jobs.size();
-  acToJson(ac, d["ac"].to<JsonObject>());
   sendJson(d);
 }
 
@@ -186,66 +158,27 @@ static void sendSignals() {
   sendJson(d);
 }
 
-static void sendProtocols() {
+// Um perfil por mensagem (perfis podem ser grandes), depois "profilesDone".
+static void sendProfiles() {
+  int n = 0;
+  profileList([&](const String &id, const String &json) {
+    JsonDocument d;
+    d["t"] = "profile";
+    d["id"] = id;
+    d["data"] = serialized(json);
+    sendJson(d);
+    n++;
+  });
   JsonDocument d;
-  d["t"] = "protocols";
-  JsonArray list = d["list"].to<JsonArray>();
-  for (int i = 1; i <= (int)kLastDecodeType; i++) {
-    const decode_type_t p = (decode_type_t)i;
-    if (!IRac::isProtocolSupported(p)) continue;
-    JsonObject o = list.add<JsonObject>();
-    o["id"] = i;
-    o["n"] = typeToString(p);
-  }
+  d["t"] = "profilesDone";
+  d["n"] = n;
   sendJson(d);
-}
-
-// ---------------------------------------------------------------- persistência
-
-// Protocolo escolhido à mão em CONFIG. Enquanto for falso (protocolo padrão),
-// gravar um botão do controle original troca para o protocolo detectado.
-static bool protoUser = false;
-
-static void markDirty() {
-  stateDirty = true;
-  stateDirtySince = millis();
-}
-
-static void saveState() {
-  LinkAc packed;
-  linkPackAc(ac, packed);
-  prefs.putBytes("ac", &packed, sizeof(packed));
-  prefs.putBool("learned", learnedMode);
-  prefs.putBool("protoUser", protoUser);
-  prefs.putBool("powerAbs", powerAbs);
-  stateDirty = false;
-}
-
-static void loadState() {
-  LinkAc packed;
-  if (prefs.getBytes("ac", &packed, sizeof(packed)) == sizeof(packed)) {
-    linkUnpackAc(packed, ac);
-  } else {
-    IRac::initState(&ac);
-    ac.protocol = DEFAULT_AC_PROTOCOL;
-    ac.model = DEFAULT_AC_MODEL;
-    ac.power = false;
-    ac.mode = stdAc::opmode_t::kCool;
-    ac.degrees = 24;
-    ac.fanspeed = stdAc::fanspeed_t::kAuto;
-    ac.swingv = stdAc::swingv_t::kOff;
-    ac.swingh = stdAc::swingh_t::kOff;
-  }
-  learnedMode = prefs.getBool("learned", false);
-  protoUser = prefs.getBool("protoUser", false);
-  powerAbs = prefs.getBool("powerAbs", true);
 }
 
 // ---------------------------------------------------------------- fila de envios
 
 static String jobLabel(const Job &job) {
   switch (job.kind) {
-    case JobKind::Ac: return "ar";
     case JobKind::Ping: return "ping";
     default: return job.key;
   }
@@ -271,18 +204,11 @@ static bool queueJob(const Job &job) {
   return true;
 }
 
-static void queueSignal(const String &key) {
+static void queueSignal(const String &key, bool forceRaw = false) {
   Job job;
   job.kind = JobKind::Signal;
   job.key = key;
-  queueJob(job);
-}
-
-static void queueAc(const stdAc::state_t &state, const stdAc::state_t &prev) {
-  Job job;
-  job.kind = JobKind::Ac;
-  job.ac = state;
-  job.prev = prev;
+  job.forceRaw = forceRaw;
   queueJob(job);
 }
 
@@ -294,7 +220,6 @@ static void startJob(const Job &job) {
   uint16_t seq = 0;
   bool usedCode = false;
   switch (job.kind) {
-    case JobKind::Ac: seq = linkSendAc(job.ac, job.prev, powerAbs); break;
     case JobKind::Ping: seq = linkPing(); break;
     case JobKind::Signal: {
       Signal sig;
@@ -303,7 +228,7 @@ static void startJob(const Job &job) {
         lastJobDone = millis();
         return;
       }
-      if (sig.hasCode) {
+      if (sig.hasCode && !(job.forceRaw && !sig.raw.empty())) {
         seq = linkSendCode(sig.protocol, sig.bits, sig.isState, sig.data, sig.nbytes);
         usedCode = true;
       } else {
@@ -360,101 +285,6 @@ static void processJobs() {
   startJob(job);
 }
 
-// ---------------------------------------------------------------- modo aprendido
-
-// Enfileira o primeiro sinal existente da lista; registra o primeiro como faltante.
-static bool queueFirst(std::initializer_list<String> keys) {
-  for (const String &k : keys) {
-    if (signalExists(k)) {
-      queueSignal(k);
-      return true;
-    }
-  }
-  missingKeys.push_back(*keys.begin());
-  return false;
-}
-
-static void reportMissing() {
-  if (missingKeys.empty()) return;
-  JsonDocument d;
-  d["t"] = "missing";
-  JsonArray keys = d["keys"].to<JsonArray>();
-  for (const String &k : missingKeys) keys.add(k);
-  sendJson(d);
-}
-
-// Traduz a diferença entre dois estados em sinais gravados.
-static void queueLearnedChange(const stdAc::state_t &from, const stdAc::state_t &to) {
-  missingKeys.clear();
-  const String mode = acModeName(to.mode);
-  const int temp = lroundf(to.degrees);
-  const String combo = mode + "_" + String(temp);  // ex.: cool_23 (estado completo)
-
-  if (!to.power) {
-    if (from.power) queueFirst({"power_off", "power"});
-    reportMissing();
-    return;
-  }
-
-  bool modeChanged = from.mode != to.mode;
-  bool tempChanged = lroundf(from.degrees) != temp;
-
-  if (!from.power) {
-    if (signalExists(combo)) {
-      queueSignal(combo);
-      modeChanged = tempChanged = false;
-    } else {
-      queueFirst({"power_on", "power"});
-    }
-  }
-
-  if ((modeChanged || tempChanged) && signalExists(combo)) {
-    queueSignal(combo);
-  } else {
-    if (modeChanged) queueFirst({"mode_" + mode, "mode"});
-    if (tempChanged) {
-      const String absolute = "temp_" + String(temp);
-      if (signalExists(absolute)) {
-        queueSignal(absolute);
-      } else {
-        const int delta = temp - (int)lroundf(from.degrees);
-        const String step = delta > 0 ? "temp_up" : "temp_down";
-        if (signalExists(step)) {
-          for (int i = 0; i < min(abs(delta), 15); i++) queueSignal(step);
-        } else {
-          missingKeys.push_back(step);
-        }
-      }
-    }
-  }
-
-  if (from.fanspeed != to.fanspeed) queueFirst({"fan_" + String(acFanName(to.fanspeed)), "fan"});
-
-  if (from.swingv != to.swingv) {
-    if (to.swingv == stdAc::swingv_t::kOff) queueFirst({"swing_off", "swing"});
-    else queueFirst({"swing_" + String(acSwingVName(to.swingv)), "swing_on", "swing"});
-  }
-  if (from.swingh != to.swingh) {
-    if (to.swingh == stdAc::swingh_t::kOff) queueFirst({"swingh_off", "swingh"});
-    else queueFirst({"swingh_" + String(acSwingHName(to.swingh)), "swingh_on", "swingh"});
-  }
-
-  struct Toggle {
-    const char *key;
-    bool before, after;
-  };
-  const Toggle toggles[] = {
-      {"turbo", from.turbo, to.turbo}, {"econo", from.econo, to.econo},    {"quiet", from.quiet, to.quiet},
-      {"light", from.light, to.light}, {"clean", from.clean, to.clean},    {"filter", from.filter, to.filter},
-      {"beep", from.beep, to.beep},    {"sleep", from.sleep >= 0, to.sleep >= 0},
-  };
-  for (const Toggle &t : toggles) {
-    if (t.before == t.after) continue;
-    queueFirst({String(t.key) + (t.after ? "_on" : "_off"), String(t.key)});
-  }
-  reportMissing();
-}
-
 // ---------------------------------------------------------------- gravação
 
 static void startLearning(const String &rawKey) {
@@ -474,40 +304,6 @@ static void stopLearning() {
 
 // ---------------------------------------------------------------- leitura do controle original
 
-// Whirlpool: lê o bit de energia e o "botão" do sinal recebido.
-static bool whirlpoolBits(bool &powerBit, uint8_t &cmd) {
-#if DECODE_WHIRLPOOL_AC
-  if (results.decode_type != decode_type_t::WHIRLPOOL_AC) return false;
-  IRWhirlpoolAc w(kGpioUnused);
-  w.setRaw(results.state);
-  powerBit = w.getPowerToggle();
-  cmd = w.getCommand();
-  return true;
-#else
-  return false;
-#endif
-}
-
-// Um botão que não é o LIGA/DESLIGA com o bit de energia em 1 só acontece
-// quando o bit é o estado (Consul), e não "alternar".
-static void detectPowerAbs() {
-  bool bit;
-  uint8_t cmd;
-  if (!whirlpoolBits(bit, cmd) || powerAbs || !bit || cmd == kWhirlpoolAcCommandPower) return;
-  powerAbs = true;
-  markDirty();
-  Serial.println("Whirlpool: bit de energia absoluto detectado");
-}
-
-// Converte o sinal recebido em estado do ar (com o ajuste do Whirlpool/Consul).
-static bool decodeAc(stdAc::state_t &out) {
-  if (!IRAcUtils::decodeToState(&results, &out, &ac)) return false;
-  bool bit;
-  uint8_t cmd;
-  if (powerAbs && whirlpoolBits(bit, cmd)) out.power = bit;
-  return true;
-}
-
 // Diagnóstico: mostra na página o último sinal recebido.
 static void reportIr() {
   JsonDocument d;
@@ -524,12 +320,6 @@ static void reportIr() {
     d["hex"] = hex;
   } else {
     d["hex"] = uint64ToString(results.value, 16);
-  }
-  bool bit;
-  uint8_t cmd;
-  if (whirlpoolBits(bit, cmd)) {
-    d["wPower"] = bit;
-    d["wCmd"] = cmd;
   }
   sendJson(d);
   Serial.printf("IR: %s %d bits %s\n", d["proto"].as<const char *>(), results.bits, d["hex"].as<const char *>());
@@ -575,60 +365,25 @@ static void finishLearning() {
     return;
   }
 
-  // Protocolo de ar suportado: habilita o controle completo automaticamente
-  const bool acCapable = sig.hasCode && IRac::isProtocolSupported(type);
-  bool autoSet = false;
-  // (também atualiza o modelo quando é o mesmo protocolo, ex.: Whirlpool DG11J1-3A x DG11J1-91)
-  if (acCapable && (!protoUser || ac.protocol == decode_type_t::UNKNOWN || ac.protocol == type)) {
-    stdAc::state_t decoded;
-    if (decodeAc(decoded)) ac = decoded;
-    ac.protocol = type;
-    protoUser = true;  // veio do controle original: não troca mais sozinho
-    autoSet = true;
-    markDirty();
-  }
-
   Serial.printf("Sinal \"%s\" gravado: %s, %d bits, %d tempos\n", sig.key.c_str(), protoName(sig.protocol).c_str(),
                 sig.bits, (int)sig.raw.size());
   JsonDocument d;
   d["t"] = "learned";
   d["key"] = sig.key;
   d["proto"] = sig.hasCode ? protoName(sig.protocol) : String("RAW");
-  d["protoId"] = sig.protocol;
   d["bits"] = sig.bits;
   d["n"] = sig.raw.size();
-  d["acCapable"] = acCapable;
-  d["autoSet"] = autoSet;
   sendJson(d);
   ledFlash(COLOR_OK, 600);
   sendSignals();
   sendStatus();
 }
 
-// Controle original usado fora da gravação: acompanha o estado do ar.
-static void syncFromRemote() {
-  if (learnedMode || !protocolReady() || results.decode_type != ac.protocol) return;
-  if (pending.active || millis() - lastJobDone < 1500) return;  // é o nosso próprio emissor
-  stdAc::state_t decoded;
-  if (!decodeAc(decoded)) return;
-  if (ac.model >= 0 && decoded.model < 0) decoded.model = ac.model;
-  ac = decoded;
-  markDirty();
-  JsonDocument d;
-  d["t"] = "remote";
-  sendJson(d);
-  sendStatus();
-}
-
 static void handleIr() {
   if (!irrecv.decode(&results)) return;  // com save_buffer a captura continua sozinha
   const bool ours = pending.active || millis() - lastJobDone < 1500;  // nosso próprio emissor
-  if (!ours) {
-    reportIr();
-    detectPowerAbs();
-  }
+  if (!ours) reportIr();
   if (learning.active) finishLearning();
-  else syncFromRemote();
 }
 
 // ---------------------------------------------------------------- comandos da página
@@ -646,46 +401,19 @@ static void handleMessage(const String &line) {
   if (c == "hello") {
     sendStatus();
     sendSignals();
+    sendProfiles();
     return;
   }
   if (c == "list") return sendSignals();
-  if (c == "protocols") return sendProtocols();
-
-  if (c == "ac") {
-    stdAc::state_t next = ac;
-    acMergeJson(doc["ac"].as<JsonObjectConst>(), next);
-    if (learnedMode) {
-      queueLearnedChange(ac, next);
-    } else if (protocolReady()) {
-      queueAc(next, ac);
-    } else {
-      notifyError("Defina o protocolo do ar (CONFIG) ou use o modo APRENDIDO");
-    }
-    ac = next;
-    markDirty();
-    return sendStatus();
-  }
-
-  if (c == "resend") {
-    if (!learnedMode) {
-      if (protocolReady()) queueAc(ac, ac);
-      else notifyError("Protocolo do ar nao definido");
-    } else {
-      const String combo = String(acModeName(ac.mode)) + "_" + String(lroundf(ac.degrees));
-      if (!ac.power) queueSignal(signalExists("power_off") ? "power_off" : "power");
-      else if (signalExists(combo)) queueSignal(combo);
-      else notifyError("Nenhum sinal \"" + combo + "\" gravado");
-    }
-    return;
-  }
+  if (c == "profiles") return sendProfiles();
 
   if (c == "learn") return startLearning(doc["key"] | QUICK_SLOT);
   if (c == "learnCancel") return stopLearning();
 
   if (c == "send") {
     const String key = signalSanitizeKey(doc["key"] | "");
-    if (signalExists(key)) queueSignal(key);
-    else notifyError("Sinal nao encontrado: " + key);
+    if (signalExists(key)) queueSignal(key, doc["raw"] | false);
+    else notifyError("Comando ainda nao gravado: " + key);
     return;
   }
 
@@ -701,49 +429,36 @@ static void handleMessage(const String &line) {
     return sendSignals();
   }
 
-  if (c == "setProto") {
-    const int id = doc["id"] | -1;
-    if (id >= 0 && !IRac::isProtocolSupported((decode_type_t)id)) {
-      notifyError("Protocolo nao suportado");
-      return;
-    }
-    ac.protocol = (decode_type_t)id;
-    ac.model = doc["model"] | -1;
-    protoUser = true;
-    if (id >= 0) learnedMode = false;
-    markDirty();
-    return sendStatus();
+  // Perfis: o conteúdo ("data") é montado pela página e guardado como está
+  if (c == "saveProfile") {
+    const String id = profileSanitizeId(doc["id"] | "");
+    if (!id.length()) return notifyError("Perfil sem identificador");
+    bool exists = false;
+    int count = 0;
+    profileList([&](const String &pid, const String &) {
+      exists |= pid == id;
+      count++;
+    });
+    if (!exists && count >= PROFILES_MAX) return notifyError("Limite de perfis atingido");
+    String json;
+    serializeJson(doc["data"], json);
+    if (!profileSave(id, json)) return notifyError("Nao foi possivel salvar o perfil (grande demais?)");
+    JsonDocument d;
+    d["t"] = "profileSaved";
+    d["id"] = id;
+    return sendJson(d);
   }
 
-  // Assistente de protocolo: envia um estado de teste sem alterar a configuração
-  if (c == "tryProto") {
-    const int id = doc["id"] | -1;
-    if (id < 0 || !IRac::isProtocolSupported((decode_type_t)id)) {
-      notifyError("Protocolo nao suportado");
-      return;
-    }
-    stdAc::state_t test = ac;
-    test.protocol = (decode_type_t)id;
-    test.model = doc["model"] | -1;
-    acMergeJson(doc["ac"].as<JsonObjectConst>(), test);
-    // No teste não sabemos se o ar está ligado: força a troca de energia
-    // (em protocolos com "alternar", LIGAR e DESLIGAR enviam o bit de alternar)
-    stdAc::state_t prev = test;
-    prev.power = !test.power;
-    queueAc(test, prev);
-    return;
-  }
-
-  if (c == "setPowerAbs") {
-    powerAbs = doc["on"] | true;
-    markDirty();
-    return sendStatus();
-  }
-
-  if (c == "setMode") {
-    learnedMode = doc["learned"] | false;
-    markDirty();
-    return sendStatus();
+  if (c == "delProfile") {
+    const String id = profileSanitizeId(doc["id"] | "");
+    if (!id.length()) return notifyError("Perfil sem identificador");
+    profileRemove(id);
+    signalRemovePrefix(id + "-");  // apaga os comandos gravados do perfil
+    JsonDocument d;
+    d["t"] = "profileDeleted";
+    d["id"] = id;
+    sendJson(d);
+    return sendSignals();
   }
 
   if (c == "ping") {
@@ -802,7 +517,7 @@ static void handleButtons() {
 void setup() {
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n== Receptor ArCondicionado " FW_VERSION " ==");
+  Serial.println("\n== Receptor (controle universal) " FW_VERSION " ==");
 
 #if PIN_RGB >= 0
   rgb.begin();
@@ -815,8 +530,6 @@ void setup() {
   pinMode(PIN_BTN_REC, INPUT_PULLUP);
   pinMode(PIN_BTN_SEND, INPUT_PULLUP);
 
-  prefs.begin("ac", false);
-  loadState();
   if (!signalsBegin()) Serial.println("Falha ao montar o LittleFS");
 
   transportBegin(handleMessage);
@@ -852,7 +565,5 @@ void loop() {
     lastPaired = linkPaired();
     sendStatus();
   }
-
-  if (stateDirty && millis() - stateDirtySince > 3000) saveState();
   ledUpdate();
 }

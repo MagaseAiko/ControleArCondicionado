@@ -5,7 +5,6 @@
 #include <esp_wifi.h>
 #include <Preferences.h>
 #include "config.h"
-#include "link_ac.h"
 
 #if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
 #error "Use platform espressif32@6.x (Arduino core 2.x): IRremoteESP8266 ainda nao suporta o core 3."
@@ -157,19 +156,6 @@ void linkLoop() {
 }
 
 void linkOnResult(LinkResultCallback cb) { resultCb = cb; }
-
-uint16_t linkSendAc(const stdAc::state_t &state, const stdAc::state_t &prev, bool powerAbs) {
-  if (!paired) return 0;
-  LinkAc m;
-  const uint16_t seq = newSeq();
-  linkInitHeader(m.h, LINK_AC, seq);
-  linkPackAc(state, m);
-  m.flags |= AC_F_HAS_PREV;
-  if (prev.power) m.flags |= AC_F_PREV_POWER;
-  m.flags |= (uint16_t)linkAcCommand(prev, state) << AC_F_CMD_SHIFT;
-  if (powerAbs) m.flags |= AC_F_POWER_ABS;
-  return sendPacket(emitter, &m, sizeof(m)) ? seq : 0;
-}
 
 uint16_t linkSendCode(int16_t protocol, uint16_t bits, bool isState, const uint8_t *data, uint8_t nbytes) {
   if (!paired || nbytes > LINK_MAX_STATE) return 0;

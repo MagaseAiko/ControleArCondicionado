@@ -3,506 +3,397 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#C9B8F5">
-<title>AR-CTRL 2000</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0e0d12">
+<title>Controles</title>
 <style>
-  :root {
-    --base: #C9B8F5;
-    --base-2: #B8A3EF;
-    --light: #EEE8FD;
-    --ink: #2B1D4E;
-    --deep: #5B3FA8;
-    --lcd: #1C1236;
-    --lcd-on: #D8CBFF;
-    --lcd-dim: #4A3A78;
-    --pink: #F59BC8;
-    --ok: #7FE0B0;
-    --warn: #FFD27A;
-    --err: #FF8A8A;
-    --px: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
-    --mono: 'VT323', ui-monospace, 'Courier New', monospace;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; }
-  body {
-    min-height: 100vh;
-    background-color: var(--base);
-    background-image:
-      linear-gradient(45deg, rgba(43,29,78,.06) 25%, transparent 25%, transparent 75%, rgba(43,29,78,.06) 75%),
-      linear-gradient(45deg, rgba(43,29,78,.06) 25%, transparent 25%, transparent 75%, rgba(43,29,78,.06) 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 8px 8px;
-    color: var(--ink);
-    font-family: var(--mono);
-    font-size: 22px;
-    line-height: 1.15;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left);
-  }
-  .wrap { max-width: 520px; margin: 0 auto; padding: 12px; }
+/* Layout: app de uma coluna (largura de celular), barra de abas embaixo, perfis em chips no topo */
+:root {
+  --bg: #f4f3f8;
+  --surface: #ffffff;
+  --surface-2: #ece9f4;
+  --border: #e0dbec;
+  --border-strong: #c3bcd6;
+  --text: #16131f;
+  --muted: #6b6580;
+  --accent: #c9b8f5;
+  --accent-strong: #5b43b8;
+  --on-accent: #1c1430;
+  --danger: #d93c45;
+  --danger-soft: #fbe6e7;
+  --success: #23905f;
+  --success-soft: #def3e9;
+  --warning: #c27a12;
+  --info: #2f6ae8;
+  --info-soft: #e2ebfd;
+  --shadow: 0 1px 2px rgb(22 19 31 / .06), 0 6px 20px rgb(22 19 31 / .05);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --gutter: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0d12; --surface: #18161f; --surface-2: #232030; --border: #2b2738; --border-strong: #4a4460;
+  --text: #f2eff9; --muted: #9b94b0; --accent: #c9b8f5; --accent-strong: #c9b8f5; --on-accent: #1c1430;
+  --danger: #ff6b72; --danger-soft: #3a1c22; --success: #4cd38f; --success-soft: #16301f; --warning: #f2b04a;
+  --info: #7ea6ff; --info-soft: #1b2540; --shadow: none; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e0d12; --surface: #18161f; --surface-2: #232030; --border: #2b2738; --border-strong: #4a4460;
+  --text: #f2eff9; --muted: #9b94b0; --accent: #c9b8f5; --accent-strong: #c9b8f5; --on-accent: #1c1430;
+  --danger: #ff6b72; --danger-soft: #3a1c22; --success: #4cd38f; --success-soft: #16301f; --warning: #f2b04a;
+  --info: #7ea6ff; --info-soft: #1b2540; --shadow: none; color-scheme: dark }
 
-  /* ---------- barra superior ---------- */
-  header.top {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--ink); color: var(--base);
-    border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--deep);
-    padding: 10px 12px; margin-bottom: 12px;
-  }
-  .logo { font-family: var(--px); font-size: 13px; letter-spacing: 1px; flex: 1; line-height: 1.5; }
-  .logo small { display: block; font-family: var(--mono); font-size: 16px; color: var(--base-2); letter-spacing: 0; }
-  .led { width: 14px; height: 14px; border: 2px solid var(--base); background: var(--lcd-dim); flex: none; }
-  .led.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-  .led.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.45;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.ic { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* ---------- botões ---------- */
-  button, .btn {
-    font-family: var(--px); font-size: 11px; line-height: 1.4;
-    color: var(--ink); background: var(--light);
-    border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
-    padding: 10px 12px; cursor: pointer; text-transform: uppercase;
-    user-select: none; touch-action: manipulation;
-  }
-  button:active, button.pressed { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-  button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--ink); }
-  button.dark { background: var(--ink); color: var(--base); box-shadow: 3px 3px 0 var(--deep); }
-  button.accent { background: var(--deep); color: var(--light); }
-  button.pink { background: var(--pink); }
-  button.small { font-size: 9px; padding: 7px 8px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
-  button.small:active { transform: translate(2px, 2px); }
-  button.sel { background: var(--ink); color: var(--base); }
-  header.top button { background: var(--base); font-size: 10px; padding: 8px 10px; box-shadow: 3px 3px 0 var(--deep); }
+.app { max-width: 560px; margin: 0 auto; padding: 0 var(--gutter-r) calc(104px + env(safe-area-inset-bottom, 0px)) var(--gutter); }
 
-  /* ---------- abas ---------- */
-  nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-  nav.tabs button { padding: 10px 4px; font-size: 10px; }
-  nav.tabs button.active { background: var(--ink); color: var(--base); transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-  section.tab { display: none; }
-  section.tab.active { display: block; }
+/* ---------- topo ---------- */
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-block: 18px 6px; }
+.top-title { min-width: 0; }
+.eyebrow { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+h1 { font-size: 28px; line-height: 1.15; margin: 2px 0 0; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; overflow-wrap: anywhere; }
+.pill { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.on { background: var(--success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 22%, transparent); }
+.dot.warn { background: var(--warning); box-shadow: 0 0 0 4px color-mix(in srgb, var(--warning) 22%, transparent); }
 
-  /* ---------- painéis ---------- */
-  .panel {
-    background: var(--light); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
-    padding: 12px; margin-bottom: 16px;
-  }
-  .panel h2 {
-    font-family: var(--px); font-size: 11px; margin: -12px -12px 12px; padding: 8px 12px;
-    background: var(--base); border-bottom: 3px solid var(--ink); letter-spacing: 1px;
-    display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  }
-  .panel h2 .tag { font-family: var(--mono); font-size: 18px; letter-spacing: 0; }
-  .hint { font-size: 19px; color: var(--deep); margin: 6px 0; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .grow { flex: 1; }
-  label.lbl { font-family: var(--px); font-size: 9px; display: block; margin: 12px 0 6px; letter-spacing: 1px; }
-  input, select {
-    font-family: var(--mono); font-size: 22px; color: var(--ink);
-    background: #fff; border: 3px solid var(--ink); padding: 6px 8px; width: 100%;
-    border-radius: 0; box-shadow: inset 3px 3px 0 rgba(43,29,78,.15);
-  }
-  input:focus, select:focus { outline: 3px dashed var(--deep); outline-offset: 2px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-block: 10px 6px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); white-space: nowrap; font-size: 14px; font-weight: 600; }
+.chip .ic { width: 18px; height: 18px; }
+.chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+.chip.add { color: var(--muted); border-style: dashed; }
 
-  /* ---------- controle remoto ---------- */
-  .remote {
-    background: linear-gradient(var(--base-2), var(--base));
-    border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
-    padding: 14px; margin-bottom: 16px; position: relative;
-  }
-  .remote::before {
-    content: 'AR-CTRL 2000'; font-family: var(--px); font-size: 8px; letter-spacing: 2px;
-    position: absolute; top: -11px; left: 14px; background: var(--ink); color: var(--base); padding: 4px 8px;
-  }
-  .lcd {
-    background: var(--lcd); color: var(--lcd-on); border: 3px solid var(--ink);
-    box-shadow: inset 0 0 0 3px #0e0920, inset 0 0 24px rgba(201,184,245,.15);
-    padding: 10px 12px; position: relative; overflow: hidden; margin-bottom: 14px;
-    text-shadow: 0 0 6px rgba(216,203,255,.55);
-  }
-  .lcd::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
-  }
-  .lcd.off { color: var(--lcd-dim); text-shadow: none; }
-  .lcd-top, .lcd-bottom { display: flex; justify-content: space-between; font-family: var(--px); font-size: 9px; gap: 6px; }
-  .lcd-mid { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 8px 0; }
-  .lcd-temp { font-family: var(--px); font-size: 54px; letter-spacing: 2px; }
-  .lcd-unit { font-family: var(--px); font-size: 16px; align-self: flex-start; margin-top: 8px; }
-  .lcd-flags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-family: var(--px); font-size: 8px; min-height: 12px; }
-  .lcd-flags span { opacity: .18; }
-  .lcd-flags span.on { opacity: 1; }
-  .bars { letter-spacing: -1px; }
+/* ---------- controle ---------- */
+.view { display: grid; gap: 18px; padding-top: 8px; }
+.editbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 18px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 14px; }
+.editbar .btn { height: 36px; background: var(--on-accent); color: var(--accent); }
+.section { display: grid; gap: 10px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.section-head h3 { margin: 0 0 0 4px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.section-head input { flex: 1; min-width: 0; height: 38px; }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 78px; gap: 10px; grid-auto-flow: row dense; }
+.tile { position: relative; border: 0; border-radius: 22px; background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; min-width: 0;
+  font-size: 12.5px; font-weight: 600; text-align: center; transition: transform .12s ease, background .2s ease; user-select: none; }
+.tile .tl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .ic { width: 24px; height: 24px; }
+button.tile:active, .tile button:active { transform: scale(.95); }
+.tile.c-accent { background: var(--accent); color: var(--on-accent); }
+.tile.c-danger { background: var(--danger-soft); color: var(--danger); }
+.tile.c-success { background: var(--success-soft); color: var(--success); }
+.tile.c-info { background: var(--info-soft); color: var(--info); }
+.tile.c-dark { background: var(--text); color: var(--bg); }
+.miss-dot { position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+.tile.missing, .rk.missing, .dp.missing { opacity: .55; }
+.tile.flash { animation: flash .35s ease; }
+@keyframes flash { 0% { box-shadow: 0 0 0 0 var(--accent); } 100% { box-shadow: 0 0 0 10px transparent; } }
 
-  .power-row { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 10px; align-items: stretch; margin-bottom: 14px; }
-  .power-row button { font-size: 22px; padding: 14px 0; }
-  #btnPower { background: var(--pink); font-size: 12px; }
-  #btnPower.on { background: var(--ok); }
-  .group { margin-top: 10px; }
-  .group-title { font-family: var(--px); font-size: 8px; margin-bottom: 6px; letter-spacing: 1px; }
-  .chips { display: grid; gap: 6px; }
-  .chips.c5 { grid-template-columns: repeat(5, 1fr); }
-  .chips.c6 { grid-template-columns: repeat(3, 1fr); }
-  .chips.c4 { grid-template-columns: repeat(4, 1fr); }
-  .chips button { font-size: 8px; padding: 9px 2px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
-  .chips button:active { transform: translate(2px, 2px); box-shadow: none; }
-  .ctrl-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
-  .ctrl-foot .hint { margin: 0; }
+.rocker { grid-row: span 2; padding: 6px; justify-content: space-between; gap: 0; }
+.rk { position: relative; flex: 1; width: 100%; border: 0; background: transparent; color: inherit; border-radius: 16px; display: grid; place-items: center; transition: background .15s; }
+.rk:active { background: var(--surface-2); }
+.rk-label { font-size: 12px; color: var(--muted); padding-block: 2px; }
 
-  /* ---------- sinais ---------- */
-  .sig-list { list-style: none; padding: 0; margin: 0; }
-  .sig-list li {
-    display: flex; align-items: center; gap: 8px; padding: 8px 0;
-    border-bottom: 2px dashed var(--base-2);
-  }
-  .sig-list li:last-child { border-bottom: none; }
-  .sig-name { flex: 1; min-width: 0; }
-  .sig-name b { display: block; font-weight: normal; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sig-name small { color: var(--deep); font-size: 17px; }
-  .empty { text-align: center; color: var(--deep); padding: 14px 0; }
+.dpad-wrap { grid-column: 1 / -1; grid-row: span 3; display: grid; place-items: center; }
+.dpad { position: relative; width: min(250px, 100%); aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow); }
+.dp { position: absolute; border: 0; background: transparent; color: inherit; display: grid; place-items: center; border-radius: 50%; width: 33%; height: 33%; transition: background .15s; }
+.dp:active { background: var(--surface-2); }
+.dp.up { top: 2%; left: 33.5%; } .dp.down { bottom: 2%; left: 33.5%; } .dp.left { left: 2%; top: 33.5%; } .dp.right { right: 2%; top: 33.5%; }
+.dp.ok { top: 31%; left: 31%; width: 38%; height: 38%; background: var(--surface-2); font-weight: 700; font-size: 15px; }
+.dp .miss-dot, .rk .miss-dot { top: 6px; right: 6px; }
 
-  details.map { border: 2px solid var(--ink); margin-bottom: 8px; background: #fff; }
-  details.map summary {
-    font-family: var(--px); font-size: 9px; padding: 10px; cursor: pointer; list-style: none;
-    display: flex; justify-content: space-between; background: var(--base);
-  }
-  details.map summary::-webkit-details-marker { display: none; }
-  details.map summary::before { content: '▶'; margin-right: 8px; }
-  details.map[open] summary::before { content: '▼'; }
-  details.map summary span:first-child { flex: 1; }
-  .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; padding: 8px; }
-  .map-grid button { font-family: var(--mono); font-size: 18px; text-transform: none; padding: 6px 4px; box-shadow: 2px 2px 0 var(--ink); border-width: 2px; }
-  .map-grid button.ok { background: var(--ok); }
-  .map-grid button.ok::before { content: '✓ '; }
+.editing .tile, .editing .dpad { outline: 1.5px dashed var(--accent-strong); outline-offset: 2px; }
+.editing .tile::after, .editing .dpad-wrap::after { content: ""; }
+.tile.add { background: transparent; box-shadow: none; border: 1.5px dashed var(--border-strong); color: var(--muted); outline: none !important; }
+.add-section { height: 52px; border-radius: 18px; border: 1.5px dashed var(--border-strong); background: transparent; color: var(--muted); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 20px; }
-  .kv dt { color: var(--deep); }
-  .kv dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* ---------- cartões, listas ---------- */
+.card { background: var(--surface); border-radius: 24px; padding: 18px; display: grid; gap: 14px; box-shadow: var(--shadow); min-width: 0; }
+.card h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.card p, .hint { margin: 0; color: var(--muted); font-size: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 auto; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mono { font-family: var(--mono); font-size: 13px; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; }
+.list li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
+.list li:first-child { border-top: 0; }
+.li-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.li-main b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li-main small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li-icon { width: 44px; height: 44px; border-radius: 14px; background: var(--surface-2); display: grid; place-items: center; flex: none; }
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.tag.ok { background: var(--success-soft); color: var(--success); }
+.tag.pend { background: var(--surface-2); color: var(--muted); }
+.progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent-strong); border-radius: inherit; transition: width .3s; }
+.empty { text-align: center; padding: 36px 18px; display: grid; gap: 12px; justify-items: center; }
+.empty .big { width: 64px; height: 64px; border-radius: 22px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.empty .big .ic { width: 30px; height: 30px; }
+.empty h2 { margin: 0; font-size: 20px; }
+.empty p { margin: 0; color: var(--muted); max-width: 34ch; }
 
-  .banner {
-    border: 3px solid var(--ink); background: var(--warn); padding: 10px 12px; margin-bottom: 12px;
-    box-shadow: 4px 4px 0 var(--ink); font-size: 19px;
-  }
-  .banner b { font-family: var(--px); font-size: 9px; display: block; margin-bottom: 4px; }
-  .banner.info { background: var(--light); }
-  [hidden] { display: none !important; }
+/* ---------- botões ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 18px; border-radius: 14px; border: 0; background: var(--surface-2); color: var(--text); font-weight: 600; font-size: 15px; white-space: nowrap; }
+.btn .ic { width: 20px; height: 20px; }
+.btn.primary { background: var(--text); color: var(--bg); }
+.btn.accent { background: var(--accent); color: var(--on-accent); }
+.btn.danger { background: var(--danger-soft); color: var(--danger); }
+.btn.ghost { background: transparent; }
+.btn.small { height: 36px; padding: 0 12px; font-size: 14px; border-radius: 12px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--surface-2); color: var(--text); display: grid; place-items: center; flex: none; }
+.icon-btn .ic { width: 20px; height: 20px; }
+.icon-btn.rec { color: var(--danger); }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.sheet-in:focus { outline: none; }
 
-  /* ---------- sobreposições ---------- */
-  .overlay {
-    position: fixed; inset: 0; background: rgba(28,18,54,.72); z-index: 20;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-  }
-  .dialog {
-    width: 100%; max-width: 420px; background: var(--light);
-    border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink);
-  }
-  .dialog h3 { font-family: var(--px); font-size: 11px; margin: 0; padding: 10px 12px; background: var(--base); border-bottom: 3px solid var(--ink); }
-  .dialog .body { padding: 14px 12px; }
-  .dialog .actions { display: flex; gap: 8px; justify-content: flex-end; padding: 0 12px 14px; flex-wrap: wrap; }
-  .scan {
-    font-family: var(--px); font-size: 34px; text-align: center; padding: 14px 0; color: var(--deep);
-    animation: blink 1s steps(2) infinite;
-  }
-  @keyframes blink { 50% { opacity: .25; } }
-  .progress { height: 16px; border: 3px solid var(--ink); background: #fff; margin-top: 8px; }
-  .progress div { height: 100%; background: repeating-linear-gradient(90deg, var(--deep) 0 8px, var(--base) 8px 10px); transition: width .25s linear; }
+/* ---------- formulários ---------- */
+.field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.field input, .field select { height: 48px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 0 14px; font-size: 16px; font-weight: 400; width: 100%; min-width: 0; }
+.section-head input { border-radius: 12px; border: 1px solid var(--border); background: var(--bg); padding: 0 12px; font-size: 15px; }
+.seg { display: flex; background: var(--surface-2); border-radius: 14px; padding: 4px; gap: 4px; }
+.seg button { flex: 1; min-width: 0; height: 38px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); font-weight: 600; font-size: 14px; }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.icon-grid button { aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); display: grid; place-items: center; font-size: 12px; }
+.icon-grid button.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatches button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); }
+.swatches button.on { border-color: var(--text); box-shadow: 0 0 0 3px var(--bg) inset; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 15px; }
+.switch input { appearance: none; width: 50px; height: 30px; border-radius: 999px; background: var(--border-strong); position: relative; flex: none; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked { background: var(--accent-strong); }
+.switch input:checked::after { transform: translateX(20px); }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.tpl { display: grid; gap: 6px; justify-items: start; text-align: left; padding: 14px; border-radius: 18px; border: 1.5px solid var(--border); background: var(--bg); }
+.tpl.on { border-color: var(--accent-strong); background: color-mix(in srgb, var(--accent) 25%, var(--bg)); }
+.tpl b { font-size: 14px; } .tpl small { color: var(--muted); font-size: 12px; }
 
-  #toast {
-    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(150%);
-    background: var(--ink); color: var(--base); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--deep);
-    padding: 10px 14px; font-size: 20px; max-width: calc(100% - 24px); z-index: 30;
-    transition: transform .2s steps(4);
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.err { background: var(--err); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
-  #toast.ok { background: var(--ok); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+/* ---------- abas ---------- */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center;
+  padding: 6px var(--gutter-r) calc(8px + env(safe-area-inset-bottom, 0px)) var(--gutter);
+  background: color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--border); }
+.tabbar .inner { width: 100%; max-width: 560px; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tab { display: grid; justify-items: center; gap: 4px; padding: 4px 0; border: 0; background: none; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.tab .pillic { width: 56px; height: 30px; border-radius: 999px; display: grid; place-items: center; transition: background .2s; }
+.tab.on { color: var(--text); }
+.tab.on .pillic { background: var(--accent); color: var(--on-accent); }
 
-  .busy-dot { display: inline-block; width: 10px; height: 10px; background: var(--deep); margin-left: 6px; animation: blink .6s steps(2) infinite; vertical-align: middle; }
-  footer { text-align: center; font-size: 17px; color: var(--deep); margin-top: 8px; }
+/* ---------- folha (dialog) ---------- */
+dialog.sheet { border: 0; padding: 0; width: 100%; max-width: 560px; max-height: 90vh; margin: auto auto 0; border-radius: 28px 28px 0 0; background: var(--surface); color: var(--text); }
+dialog.sheet::backdrop { background: rgb(8 6 14 / .5); }
+@media (min-width: 640px) { dialog.sheet { margin: auto; border-radius: 28px; } }
+.sheet-in { display: grid; gap: 16px; padding: 10px var(--gutter-r) calc(20px + env(safe-area-inset-bottom, 0px)) var(--gutter); max-height: 90vh; overflow: auto; }
+@media (min-width: 640px) { .sheet-in { padding: 20px 24px 24px; } }
+.grabber { width: 40px; height: 5px; border-radius: 999px; background: var(--border-strong); justify-self: center; }
+@media (min-width: 640px) { .grabber { display: none; } }
+.sheet-in h2 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+.sheet-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.sheet-actions .btn { flex: 1 1 120px; }
+
+/* ---------- gravação ---------- */
+.learn { display: grid; justify-items: center; gap: 14px; text-align: center; padding-block: 8px; }
+.ring { position: relative; width: 150px; height: 150px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .bg { stroke: var(--surface-2); }
+.ring .fg { stroke: var(--accent-strong); stroke-linecap: round; transition: stroke-dashoffset .25s linear; }
+.ring .center { position: absolute; inset: 0; display: grid; place-items: center; }
+.ring .center .ic { width: 44px; height: 44px; }
+.learn.ok .ring .fg { stroke: var(--success); }
+.learn.fail .ring .fg { stroke: var(--danger); }
+.pulse { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); opacity: .7; } }
+.learn h2 { margin: 0; }
+.learn p { margin: 0; color: var(--muted); max-width: 36ch; }
+
+.toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 50; max-width: calc(100% - 32px);
+  background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 30px rgb(0 0 0 / .25); }
+.toast.err { background: var(--danger); color: #fff; }
+.banner { border-radius: 18px; padding: 14px 16px; background: color-mix(in srgb, var(--warning) 16%, var(--surface)); font-size: 14px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-
+<div class="app">
   <header class="top">
-    <div class="led" id="connLed"></div>
-    <div class="logo">AR-CTRL 2000<small id="connText">desconectado</small></div>
-    <button id="btnConnect">Conectar</button>
+    <div class="top-title">
+      <div class="eyebrow" id="topEyebrow">Controle universal</div>
+      <h1 id="topTitle">Controles</h1>
+    </div>
+    <button class="pill" id="connPill" type="button"><span class="dot" id="connDot"></span><span id="connText">Conectar</span></button>
   </header>
+  <nav class="chips" id="chips" aria-label="Controles"></nav>
 
-  <div class="banner" id="compatBanner" hidden></div>
-
-  <nav class="tabs">
-    <button data-tab="control" class="active">Controle</button>
-    <button data-tab="learn">Gravar</button>
-    <button data-tab="config">Config</button>
-  </nav>
-
-  <!-- ================= CONTROLE ================= -->
-  <section class="tab active" id="tab-control">
-    <div class="banner info" id="modeBanner" hidden></div>
-
-    <div class="remote">
-      <div class="lcd off" id="lcd">
-        <div class="lcd-top"><span id="lcdMode">AUTO</span><span id="lcdFan">VENT AUTO</span></div>
-        <div class="lcd-mid"><span class="lcd-temp" id="lcdTemp">--</span><span class="lcd-unit">°C</span></div>
-        <div class="lcd-bottom"><span id="lcdSwing">SWING OFF</span><span id="lcdSwingH"></span></div>
-        <div class="lcd-flags" id="lcdFlags" style="margin-top:8px"></div>
-      </div>
-
-      <div class="power-row">
-        <button id="btnTempDown" aria-label="Diminuir temperatura">−</button>
-        <button id="btnPower">Power</button>
-        <button id="btnTempUp" aria-label="Aumentar temperatura">+</button>
-      </div>
-
-      <div class="group">
-        <div class="group-title">MODO</div>
-        <div class="chips c5" id="chipsMode"></div>
-      </div>
-      <div class="group">
-        <div class="group-title">VENTILAÇÃO</div>
-        <div class="chips c6" id="chipsFan"></div>
-      </div>
-      <div class="group">
-        <div class="group-title">ALETA VERTICAL</div>
-        <div class="chips c4" id="chipsSwingV"></div>
-      </div>
-      <div class="group">
-        <div class="group-title">ALETA HORIZONTAL</div>
-        <div class="chips c4" id="chipsSwingH"></div>
-      </div>
-      <div class="group">
-        <div class="group-title">FUNÇÕES</div>
-        <div class="chips c4" id="chipsExtra"></div>
-      </div>
-    </div>
-
-    <div class="ctrl-foot">
-      <p class="hint" id="ctrlInfo">—</p>
-      <button class="small" id="btnResend">Reenviar</button>
-    </div>
-  </section>
-
-  <!-- ================= GRAVAR ================= -->
-  <section class="tab" id="tab-learn">
-    <div class="panel">
-      <h2>NOVA GRAVAÇÃO <span class="tag">universal</span></h2>
-      <label class="lbl" for="learnFunc">FUNÇÃO DO AR (OPCIONAL)</label>
-      <select id="learnFunc"></select>
-      <label class="lbl" for="learnName">NOME DO SINAL</label>
-      <input id="learnName" placeholder="ex.: tv_liga" maxlength="24" autocomplete="off" autocapitalize="off">
-      <p class="hint">Aponte o controle original para o receptor IR e aperte o botão depois de clicar em GRAVAR.</p>
-      <div class="row"><button class="dark grow" id="btnLearn">● Gravar</button></div>
-    </div>
-
-    <div class="panel">
-      <h2>SINAIS SALVOS <span class="tag" id="sigCount">0</span></h2>
-      <ul class="sig-list" id="sigList"></ul>
-    </div>
-
-    <div class="panel">
-      <h2>MAPA DE FUNÇÕES <span class="tag" id="mapCount">0</span></h2>
-      <p class="hint">Usado no modo APRENDIDO: cada botão do controle desta página procura o sinal com o nome correspondente. Toque numa função para gravar. ✓ = já gravado.</p>
-      <div id="mapGroups"></div>
-    </div>
-  </section>
-
-  <!-- ================= CONFIG ================= -->
-  <section class="tab" id="tab-config">
-    <div class="panel">
-      <h2>CONEXÃO</h2>
-      <dl class="kv">
-        <dt>Estado</dt><dd id="cfgConn">desconectado</dd>
-        <dt>Via</dt><dd id="cfgVia">—</dd>
-        <dt>Firmware</dt><dd id="cfgFw">—</dd>
-      </dl>
-      <div class="row" style="margin-top:12px">
-        <button class="grow" id="btnDemo">Modo demo</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>EMISSOR <span class="tag" id="cfgEmitterTag">—</span></h2>
-      <dl class="kv">
-        <dt>Pareado</dt><dd id="cfgPaired">—</dd>
-        <dt>MAC</dt><dd id="cfgMac">—</dd>
-        <dt>Firmware</dt><dd id="cfgEmFw">—</dd>
-      </dl>
-      <div class="row" style="margin-top:12px">
-        <button class="grow" id="btnPing">Testar</button>
-        <button class="grow pink" id="btnUnpair">Esquecer</button>
-      </div>
-      <p class="hint">Ao esquecer, o receptor pareia com o próximo emissor que ligar.</p>
-    </div>
-
-    <div class="panel">
-      <h2>MODO DE CONTROLE</h2>
-      <div class="seg">
-        <button id="btnModeProto">Protocolo</button>
-        <button id="btnModeLearned">Aprendido</button>
-      </div>
-      <p class="hint"><b>PROTOCOLO</b>: o receptor gera o sinal completo do ar (precisa do protocolo).<br><b>APRENDIDO</b>: usa os sinais gravados no MAPA DE FUNÇÕES.</p>
-    </div>
-
-    <div class="panel">
-      <h2>ASSISTENTE DE MARCA <span class="tag" id="brandTag">—</span></h2>
-      <div class="seg" id="brandSeg"></div>
-      <p class="hint" id="brandHint"></p>
-      <p class="hint">O jeito mais garantido é gravar um botão do controle original (aba GRAVAR). Sem o controle, teste os candidatos abaixo: cada TESTAR envia <b>LIGAR · FRIO · 23° · VENT AUTO</b>. Quando o ar bipar ou ligar, toque em USAR.</p>
-      <ul class="sig-list" id="brandList"><li class="empty">Conecte ao receptor para listar</li></ul>
-      <div class="row" style="margin-top:8px">
-        <button class="grow" id="btnBrandOff">Enviar DESLIGAR com o último testado</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>LIGA/DESLIGA WHIRLPOOL <span class="tag">consul</span></h2>
-      <div class="seg">
-        <button id="btnPowerAbs">Estado (Consul)</button>
-        <button id="btnPowerToggle">Alternar (Whirlpool)</button>
-      </div>
-      <p class="hint">Só vale para o protocolo WHIRLPOOL_AC. <b>Estado</b>: cada sinal diz se o ar fica ligado ou desligado (Consul). <b>Alternar</b>: o sinal só troca liga/desliga (Whirlpool de outros países). Se qualquer comando da página desliga o ar, use <b>Estado</b>. O receptor detecta isso sozinho quando você usa o controle original.</p>
-    </div>
-
-    <div class="panel">
-      <h2>ÚLTIMO SINAL RECEBIDO <span class="tag">diagnóstico</span></h2>
-      <p class="hint">Aperte um botão do controle original apontado para o receptor.</p>
-      <p class="hint" id="lastIr" style="word-break:break-all">—</p>
-    </div>
-
-    <div class="panel">
-      <h2>PROTOCOLO DO AR <span class="tag" id="cfgProtoTag">—</span></h2>
-      <p class="hint">Grave qualquer botão do controle original: se o protocolo for reconhecido ele é configurado sozinho. Ou escolha abaixo.</p>
-      <label class="lbl" for="protoSelect">PROTOCOLO</label>
-      <select id="protoSelect"><option value="-1">— carregando —</option></select>
-      <label class="lbl" for="protoModel">MODELO (−1 = PADRÃO)</label>
-      <input id="protoModel" type="number" value="-1" inputmode="numeric">
-      <div class="row" style="margin-top:12px">
-        <button class="dark grow" id="btnSaveProto">Salvar</button>
-        <button class="grow" id="btnReloadProto">Recarregar lista</button>
-      </div>
-    </div>
-
-    <footer>AR-CTRL 2000 · receptor ESP32 + emissor ESP-01</footer>
-  </section>
+  <main>
+    <section class="view" id="view-remote"></section>
+    <section class="view" id="view-commands" hidden></section>
+    <section class="view" id="view-profiles" hidden></section>
+    <section class="view" id="view-settings" hidden></section>
+  </main>
 </div>
 
-<!-- gravação -->
-<div class="overlay" id="learnOverlay" hidden>
-  <div class="dialog">
-    <h3 id="learnTitle">GRAVANDO</h3>
-    <div class="body">
-      <div id="learnWaiting">
-        <div class="scan">((( IR )))</div>
-        <p style="text-align:center;margin:0">Aperte o botão no controle<br>sinal: <b id="learnKey"></b></p>
-        <div class="progress"><div id="learnBar" style="width:100%"></div></div>
-      </div>
-      <div id="learnResult" hidden></div>
-    </div>
-    <div class="actions" id="learnActions"></div>
+<nav class="tabbar" aria-label="Seções">
+  <div class="inner">
+    <button class="tab on" data-view="remote" type="button"><span class="pillic" data-ic="grid"></span>Controle</button>
+    <button class="tab" data-view="commands" type="button"><span class="pillic" data-ic="list"></span>Comandos</button>
+    <button class="tab" data-view="profiles" type="button"><span class="pillic" data-ic="layers"></span>Perfis</button>
+    <button class="tab" data-view="settings" type="button"><span class="pillic" data-ic="sliders"></span>Ajustes</button>
   </div>
-</div>
+</nav>
 
-<!-- diálogo genérico -->
-<div class="overlay" id="dialog" hidden>
-  <div class="dialog">
-    <h3 id="dlgTitle"></h3>
-    <div class="body">
-      <div id="dlgBody"></div>
-      <input id="dlgInput" hidden maxlength="24" autocomplete="off" autocapitalize="off" style="margin-top:10px">
-    </div>
-    <div class="actions" id="dlgActions"></div>
-  </div>
-</div>
-
-<div id="toast"></div>
+<dialog class="sheet" id="sheet"><div class="sheet-in" id="sheetIn"></div></dialog>
+<div class="toast" id="toast" hidden></div>
 
 <script>
 'use strict';
+// ======================================================================
+// Ícones (traço, 24x24)
+// ======================================================================
+const ICONS = {
+  power: '<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  up: '<path d="m6 15 6-6 6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  left: '<path d="m15 6-6 6 6 6"/>',
+  right: '<path d="m9 6 6 6-6 6"/>',
+  snow: '<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  temp: '<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>',
+  fan: '<circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7s3 4-2 7M14 12c4 0 7 1 7 4s-4 3-7-2M12 14c0 4-1 7-4 7s-3-4 2-7M10 12c-4 0-7-1-7-4s4-3 7 2"/>',
+  swing: '<path d="M4 8c3-3 13-3 16 0"/><path d="M12 8v12"/><path d="m8 16 4 4 4-4"/>',
+  mode: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  leaf: '<path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="m5 19 8-8"/>',
+  light: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  volume: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
+  mute: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 10 4 4M21 10l-4 4"/>',
+  tv: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="m8 2 4 4 4-4"/>',
+  input: '<path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/>',
+  home: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/>',
+  back: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  play: '<path d="M7 5v14l11-7z"/>',
+  playpause: '<path d="M4 6v12l8-6z"/><path d="M15 6v12M19 6v12"/>',
+  next: '<path d="M5 6v12l9-6z"/><path d="M18 6v12"/>',
+  prev: '<path d="M19 6v12l-9-6z"/><path d="M6 6v12"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  hash: '<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  remote: '<rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.5"/><path d="M10 12h4M10 15h4"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+  sliders: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/>',
+  rec: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  dots: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  bt: '<path d="m7 7 10 10-5 5V2l5 5L7 17"/>',
+  wifi: '<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/>',
+  signal: '<path d="M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4"/><circle cx="12" cy="12" r="1.5"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+};
+const PICK_ICONS = ['power', 'plus', 'minus', 'up', 'down', 'left', 'right', 'snow', 'sun', 'drop', 'temp', 'fan', 'swing', 'mode',
+  'timer', 'moon', 'bolt', 'leaf', 'light', 'volume', 'mute', 'tv', 'input', 'home', 'back', 'menu', 'play', 'playpause', 'next',
+  'prev', 'star', 'hash', 'music', 'remote'];
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const icon = (name, cls = '') => ICONS[name] ? `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>` : '';
+const clone = o => JSON.parse(JSON.stringify(o));
+const store = {
+  get(k, def) { try { const v = localStorage.getItem('ctl.' + k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem('ctl.' + k, JSON.stringify(v)); } catch (e) { /* sem armazenamento */ } },
+};
 
 // ======================================================================
-// Constantes (os UUIDs precisam bater com Receptor/src/transport_ble.cpp)
+// Modelos de controle: comandos base + layout inicial
+// ======================================================================
+const B = (cmd, label, ic, color = 'default', w = 1) => ({ type: 'button', cmd, label, icon: ic, color, w });
+const R = (label, up, down) => ({ type: 'rocker', label, up, down });
+const D = () => ({ type: 'dpad', up: 'up', down: 'down', left: 'left', right: 'right', ok: 'ok' });
+const TEMPLATES = {
+  ac: {
+    name: 'Ar-condicionado', icon: 'snow', desc: 'Liga, temperatura, modo, ventilação, swing…',
+    commands: [['power', 'Liga/Desliga'], ['temp_up', 'Temperatura +'], ['temp_down', 'Temperatura −'], ['mode', 'Modo'],
+      ['fan', 'Ventilação'], ['swing', 'Swing'], ['turbo', 'Turbo'], ['sleep', 'Sleep'], ['timer', 'Timer'], ['light', 'Luz do display']],
+    layout: [
+      { title: 'Principal', items: [B('power', 'Liga/Desliga', 'power', 'accent', 4)] },
+      { title: 'Ajustes', items: [R('Temp', 'temp_up', 'temp_down'), B('mode', 'Modo', 'mode'), B('fan', 'Ventilação', 'fan'),
+        B('swing', 'Swing', 'swing'), B('turbo', 'Turbo', 'bolt'), B('sleep', 'Sleep', 'moon'), B('timer', 'Timer', 'timer')] },
+      { title: 'Extras', items: [B('light', 'Luz do display', 'light', 'default', 2)] },
+    ],
+  },
+  tv: {
+    name: 'TV', icon: 'tv', desc: 'Liga, volume, canal, setas, OK, voltar…',
+    commands: [['power', 'Liga/Desliga'], ['input', 'Entrada'], ['home', 'Início'], ['menu', 'Menu'], ['up', 'Cima'], ['down', 'Baixo'],
+      ['left', 'Esquerda'], ['right', 'Direita'], ['ok', 'OK'], ['back', 'Voltar'], ['vol_up', 'Volume +'], ['vol_down', 'Volume −'],
+      ['mute', 'Mudo'], ['ch_up', 'Canal +'], ['ch_down', 'Canal −'], ['play_pause', 'Play/Pause']],
+    layout: [
+      { title: 'Principal', items: [B('power', 'Liga/Desliga', 'power', 'danger', 2), B('input', 'Entrada', 'input'), B('home', 'Início', 'home')] },
+      { title: 'Navegação', items: [D(), B('back', 'Voltar', 'back', 'default', 2), B('menu', 'Menu', 'menu', 'default', 2)] },
+      { title: 'Volume e canal', items: [R('Vol', 'vol_up', 'vol_down'), B('mute', 'Mudo', 'mute', 'default', 2), R('Canal', 'ch_up', 'ch_down'),
+        B('play_pause', 'Play/Pause', 'playpause', 'default', 2)] },
+    ],
+  },
+  fan: {
+    name: 'Ventilador', icon: 'fan', desc: 'Liga, velocidade, oscilar, timer',
+    commands: [['power', 'Liga/Desliga'], ['speed', 'Velocidade'], ['swing', 'Oscilar'], ['mode', 'Modo'], ['timer', 'Timer']],
+    layout: [
+      { title: 'Principal', items: [B('power', 'Liga/Desliga', 'power', 'accent', 4)] },
+      { title: 'Controles', items: [B('speed', 'Velocidade', 'fan', 'default', 2), B('swing', 'Oscilar', 'swing', 'default', 2),
+        B('mode', 'Modo', 'mode', 'default', 2), B('timer', 'Timer', 'timer', 'default', 2)] },
+    ],
+  },
+  audio: {
+    name: 'Som', icon: 'music', desc: 'Liga, volume, entrada, faixas',
+    commands: [['power', 'Liga/Desliga'], ['input', 'Entrada'], ['vol_up', 'Volume +'], ['vol_down', 'Volume −'], ['mute', 'Mudo'],
+      ['prev', 'Anterior'], ['play_pause', 'Play/Pause'], ['next', 'Próxima']],
+    layout: [
+      { title: 'Principal', items: [B('power', 'Liga/Desliga', 'power', 'danger', 2), B('input', 'Entrada', 'input', 'default', 2)] },
+      { title: 'Reprodução', items: [R('Vol', 'vol_up', 'vol_down'), B('prev', 'Anterior', 'prev'), B('play_pause', 'Play/Pause', 'playpause', 'accent'),
+        B('next', 'Próxima', 'next'), B('mute', 'Mudo', 'mute', 'default', 3)] },
+    ],
+  },
+  custom: { name: 'Personalizado', icon: 'remote', desc: 'Comece vazio e crie os seus botões', commands: [], layout: [{ title: 'Botões', items: [] }] },
+};
+const COLORS = [
+  ['default', 'Padrão', 'var(--surface-2)'], ['accent', 'Lilás', 'var(--accent)'], ['dark', 'Contraste', 'var(--text)'],
+  ['danger', 'Vermelho', 'var(--danger)'], ['success', 'Verde', 'var(--success)'], ['info', 'Azul', 'var(--info)'],
+];
+const QUICK_SLOT = 'rapido';
+
+// ======================================================================
+// Transportes: BLE (Web Bluetooth), HTTP (página servida pelo ESP32-S2) e demo
 // ======================================================================
 const UUID = {
   svc: 'c9b8f500-ac00-4c0d-9e5a-2b1d4e000001',
-  rx:  'c9b8f500-ac00-4c0d-9e5a-2b1d4e000002',
-  tx:  'c9b8f500-ac00-4c0d-9e5a-2b1d4e000003',
+  rx: 'c9b8f500-ac00-4c0d-9e5a-2b1d4e000002',
+  tx: 'c9b8f500-ac00-4c0d-9e5a-2b1d4e000003',
 };
-const TEMP_MIN = 16, TEMP_MAX = 30;
 
-const MODES = [['auto','AUTO'],['cool','FRIO'],['heat','QUENTE'],['dry','SECAR'],['fan','VENT']];
-const FANS = [['auto','AUTO'],['min','MÍN'],['low','BAIXA'],['medium','MÉDIA'],['high','ALTA'],['max','MÁX']];
-const SWINGV = [['off','FIXA'],['auto','AUTO'],['highest','TOPO'],['high','ALTA'],['middle','MEIO'],['low','BAIXA'],['lowest','BASE']];
-const SWINGH = [['off','FIXA'],['auto','AUTO'],['leftmax','ESQ+'],['left','ESQ'],['middle','MEIO'],['right','DIR'],['rightmax','DIR+'],['wide','AMPLA']];
-const EXTRAS = [['turbo','TURBO'],['econo','ECO'],['quiet','SILENC'],['light','LUZ'],['sleep','SONO'],['clean','LIMPAR'],['filter','FILTRO'],['beep','BIPE']];
-const label = (list, v) => (list.find(i => i[0] === v) || [v, String(v).toUpperCase()])[1];
-
-// Catálogo de nomes padrão usados no modo APRENDIDO (ver README)
-const temps = p => Array.from({length: TEMP_MAX - TEMP_MIN + 1}, (_, i) => [`${p}${TEMP_MIN + i}`, `${TEMP_MIN + i}°`]);
-const CATALOG = [
-  { title: 'LIGAR / DESLIGAR', keys: [['power_on','Ligar'],['power_off','Desligar'],['power','Liga/desl (alterna)']] },
-  { title: 'MODO', keys: [...MODES.map(([k,l]) => ['mode_'+k, l]), ['mode','Modo (ciclo)']] },
-  { title: 'TEMPERATURA ±', keys: [['temp_up','Temp +'],['temp_down','Temp −']] },
-  { title: 'FRIO + TEMP', keys: temps('cool_') },
-  { title: 'QUENTE + TEMP', keys: temps('heat_') },
-  { title: 'AUTO + TEMP', keys: temps('auto_') },
-  { title: 'SECAR + TEMP', keys: temps('dry_') },
-  { title: 'TEMP (QUALQUER MODO)', keys: temps('temp_') },
-  { title: 'VENTILAÇÃO', keys: [...FANS.map(([k,l]) => ['fan_'+k, l]), ['fan','Vent (ciclo)']] },
-  { title: 'ALETA VERTICAL', keys: [...SWINGV.map(([k,l]) => ['swing_'+k, l]), ['swing_on','Liga'],['swing','Alterna']] },
-  { title: 'ALETA HORIZONTAL', keys: [...SWINGH.map(([k,l]) => ['swingh_'+k, l]), ['swingh_on','Liga'],['swingh','Alterna']] },
-  { title: 'FUNÇÕES', keys: EXTRAS.flatMap(([k,l]) => [[k+'_on', l+' liga'],[k+'_off', l+' desl'],[k, l+' alterna']]) },
-];
-const CATALOG_LABEL = Object.fromEntries(CATALOG.flatMap(g => g.keys.map(([k,l]) => [k, `${g.title.split(' ')[0]} · ${l}`])));
-
-// ======================================================================
-// Utilidades
-// ======================================================================
-const $ = s => document.querySelector(s);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const sanitizeKey = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 24);
-
-let toastTimer;
-function toast(msg, kind = '') {
-  const el = $('#toast');
-  el.textContent = msg;
-  el.className = 'show ' + kind;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = kind, 2600);
-}
-
-// Diálogo próprio (alert/confirm/prompt não funcionam em todo lugar)
-function dialog({ title, body = '', input = null, buttons }) {
-  return new Promise(resolve => {
-    $('#dlgTitle').textContent = title;
-    $('#dlgBody').innerHTML = body;
-    const inp = $('#dlgInput');
-    inp.hidden = input === null;
-    inp.value = input || '';
-    const actions = $('#dlgActions');
-    actions.innerHTML = '';
-    const close = value => { $('#dialog').hidden = true; resolve({ value, text: inp.value }); };
-    for (const b of buttons) {
-      const el = document.createElement('button');
-      el.textContent = b.label;
-      el.className = b.cls || '';
-      el.onclick = () => close(b.value);
-      actions.appendChild(el);
-    }
-    $('#dialog').hidden = false;
-    if (input !== null) setTimeout(() => inp.focus(), 50);
-  });
-}
-
-// ======================================================================
-// Transportes: BLE (Web Bluetooth), HTTP (página servida pelo ESP32-S2) e DEMO
-// Todos trocam objetos JSON; o receptor responde com mensagens {t: ...}
-// ======================================================================
 class BleLink {
   constructor(onMsg, onClose) {
-    this.name = 'Bluetooth';
+    this.name = 'Bluetooth'; this.kind = 'ble';
     this.onMsg = onMsg; this.onClose = onClose;
     this.buf = ''; this.q = Promise.resolve();
     this.enc = new TextEncoder(); this.dec = new TextDecoder();
@@ -527,7 +418,7 @@ class BleLink {
     while ((i = this.buf.indexOf('\n')) >= 0) {
       const line = this.buf.slice(0, i).trim();
       this.buf = this.buf.slice(i + 1);
-      if (line) { try { this.onMsg(JSON.parse(line)); } catch (e) { console.warn('BLE linha inválida', line); } }
+      if (line) { try { this.onMsg(JSON.parse(line)); } catch (e) { console.warn('BLE: linha inválida', line); } }
     }
   }
   send(obj) {
@@ -539,7 +430,7 @@ class BleLink {
         if (this.rx.writeValueWithResponse) await this.rx.writeValueWithResponse(part);
         else await this.rx.writeValue(part);
       }
-    }).catch(e => { console.warn(e); toast('Falha ao enviar por BLE', 'err'); });
+    }).catch(e => { console.warn(e); toast('Falha ao enviar por Bluetooth', 'err'); });
     return this.q;
   }
   close() { if (this.device && this.device.gatt.connected) this.device.gatt.disconnect(); }
@@ -547,7 +438,7 @@ class BleLink {
 
 class HttpLink {
   constructor(onMsg, onClose) {
-    this.name = 'Wi-Fi · ' + location.host;
+    this.name = 'Wi-Fi · ' + location.host; this.kind = 'wifi';
     this.onMsg = onMsg; this.onClose = onClose; this.fails = 0;
   }
   async open() {
@@ -565,592 +456,887 @@ class HttpLink {
       throw e;
     }
   }
-  send(obj) { return this.post(obj).catch(() => toast('Receptor não respondeu', 'err')); }
+  send(obj) { return this.post(obj).catch(() => toast('O receptor não respondeu', 'err')); }
   close() { clearInterval(this.timer); }
 }
 
-// Simula o receptor para testar a página sem hardware
+// Simula o receptor (sinais, perfis, gravação) para conhecer a página sem hardware
 class DemoLink {
   constructor(onMsg, onClose) {
-    this.name = 'DEMO (simulado)';
+    this.name = 'Demonstração'; this.kind = 'demo';
     this.onMsg = onMsg; this.onClose = onClose;
-    this.protos = ['CARRIER_AC64','COOLIX','DAIKIN','ELECTRA_AC','FUJITSU_AC','GREE','HAIER_AC','HAIER_AC_YRW02','KELON','LG','MIDEA','MITSUBISHI_AC','PANASONIC_AC','SAMSUNG_AC','TCL112AC','TECO','TOSHIBA_AC','WHIRLPOOL_AC']
-      .map((n, i) => ({ id: 10 + i, n }));
-    this.s = {
-      t: 'status', fw: 'demo', tr: 'demo', learnedMode: false, proto: 'SAMSUNG_AC', protoId: 20, model: -1, protoOk: true, powerAbs: true,
-      emitter: { paired: true, online: true, mac: 'DE:MO:00:00:00:01', fw: 'demo' },
-      learning: { active: false, key: '', left: 0 }, busy: false, queue: 0,
-      ac: { power: false, mode: 'cool', temp: 23, fan: 'auto', swingv: 'off', swingh: 'off',
-            turbo: false, econo: false, quiet: false, light: true, clean: false, filter: false, beep: true, sleep: false },
-    };
-    this.sigs = [
-      { k: 'power', p: 'NEC', b: 32, n: 67, code: true },
-      { k: 'cool_23', p: 'SAMSUNG_AC', b: 112, n: 233, code: true },
-      { k: 'rapido', p: 'RAW', b: 0, n: 211, code: false },
-    ];
+    this.sigs = new Map();
+    this.profiles = new Map();
+    const ac = makeProfile('pdemo', 'Ar da sala', 'ac', 0);
+    const tv = makeProfile('pdtv', 'TV da sala', 'tv', 1);
+    this.profiles.set(ac.id, serializeProfile(ac));
+    this.profiles.set(tv.id, serializeProfile(tv));
+    ['power', 'temp_up', 'temp_down', 'mode', 'fan', 'swing'].forEach(k => this.sigs.set('pdemo-' + k, { p: 'COOLIX', b: 24, n: 199, code: true }));
+    ['power', 'vol_up', 'vol_down', 'mute', 'up', 'down', 'left', 'right', 'ok'].forEach(k => this.sigs.set('pdtv-' + k, { p: 'NEC', b: 32, n: 67, code: true }));
+    this.learning = { active: false, key: '', left: 0 };
   }
   async open() {}
-  emit(m, delay = 80) { setTimeout(() => this.onMsg(JSON.parse(JSON.stringify(m))), delay); }
-  status() { this.emit(this.s); }
-  signals() { this.emit({ t: 'signals', list: this.sigs }); }
-  sent(what) { this.emit({ t: 'sent', ok: true, what }, 350); }
+  close() { clearTimeout(this.learnTimer); }
+  emit(m) { setTimeout(() => this.onMsg(m), 60); }
+  status() {
+    this.emit({ t: 'status', fw: 'demo', tr: 'demo', emitter: { paired: true, online: true, mac: 'DE:MO:00:00:00:01', fw: 'demo' },
+      learning: this.learning, busy: false, queue: 0 });
+  }
+  signals() { this.emit({ t: 'signals', list: [...this.sigs].map(([k, v]) => ({ k, ...v })) }); }
+  profilesMsg() {
+    for (const [id, data] of this.profiles) this.emit({ t: 'profile', id, data: clone(data) });
+    this.emit({ t: 'profilesDone', n: this.profiles.size });
+  }
   send(o) {
     switch (o.c) {
-      case 'hello': this.status(); this.signals(); break;
+      case 'hello': this.status(); this.signals(); this.profilesMsg(); break;
       case 'status': this.status(); break;
-      case 'list': this.signals(); break;
-      case 'protocols': this.emit({ t: 'protocols', list: this.protos }); break;
-      case 'ac': Object.assign(this.s.ac, o.ac); this.status(); if (this.s.learnedMode || this.s.protoOk) this.sent(this.s.learnedMode ? 'aprendido' : 'ar'); break;
-      case 'resend': this.sent('ar'); break;
-      case 'tryProto': this.sent('ar'); break;
+      case 'send':
+        if (this.sigs.has(o.key)) setTimeout(() => this.onMsg({ t: 'sent', ok: true, what: o.key }), 250);
+        else this.emit({ t: 'error', msg: 'Comando ainda nao gravado: ' + o.key });
+        break;
       case 'learn':
-        this.s.learning = { active: true, key: o.key || 'rapido', left: 15000 }; this.status();
+        this.learning = { active: true, key: o.key, left: 15000 }; this.status();
         clearTimeout(this.learnTimer);
         this.learnTimer = setTimeout(() => {
-          const key = this.s.learning.key;
-          this.s.learning = { active: false, key: '', left: 0 };
-          const sig = { k: key, p: 'NEC', b: 32, n: 67, code: true };
-          this.sigs = this.sigs.filter(s => s.k !== key).concat(sig);
-          this.emit({ t: 'learned', key, proto: 'NEC', protoId: 3, bits: 32, n: 67, acCapable: false, autoSet: false });
+          this.learning = { active: false, key: '', left: 0 };
+          if (Math.random() < .12) { this.emit({ t: 'learnTimeout' }); this.status(); return; }
+          const protos = [['NEC', 32, 67], ['SAMSUNG', 32, 67], ['WHIRLPOOL_AC', 168, 343], ['RAW', 0, 211]];
+          const [p, b, n] = protos[Math.floor(Math.random() * protos.length)];
+          this.sigs.set(o.key, { p, b, n, code: p !== 'RAW' });
+          this.emit({ t: 'ir', proto: p, bits: b, hex: 'DEMO' });
+          this.emit({ t: 'learned', key: o.key, proto: p, bits: b, n });
           this.signals(); this.status();
-        }, 2500);
+        }, 1600 + Math.random() * 1400);
         break;
-      case 'learnCancel': clearTimeout(this.learnTimer); this.s.learning = { active: false, key: '', left: 0 }; this.status(); break;
-      case 'send': this.sent(o.key); break;
-      case 'del': this.sigs = this.sigs.filter(s => s.k !== o.key); this.signals(); break;
-      case 'rename': { const s = this.sigs.find(s => s.k === o.from); if (s) s.k = o.to; this.signals(); break; }
-      case 'setProto': {
-        const p = this.protos.find(p => p.id === o.id);
-        Object.assign(this.s, { protoId: o.id, proto: p ? p.n : '', protoOk: !!p, model: o.model });
-        if (p) this.s.learnedMode = false;
-        this.status(); break;
-      }
-      case 'setMode': this.s.learnedMode = !!o.learned; this.status(); break;
-      case 'setPowerAbs': this.s.powerAbs = !!o.on; this.status(); break;
-      case 'ping': this.sent('ping'); break;
-      case 'unpair': this.s.emitter = { paired: false, online: false, mac: '', fw: '' }; this.status(); break;
+      case 'learnCancel': clearTimeout(this.learnTimer); this.learning = { active: false, key: '', left: 0 }; this.status(); break;
+      case 'del': this.sigs.delete(o.key); this.signals(); break;
+      case 'rename': { const v = this.sigs.get(o.from); if (v) { this.sigs.delete(o.from); this.sigs.set(o.to, v); } this.signals(); break; }
+      case 'saveProfile': this.profiles.set(o.id, clone(o.data)); this.emit({ t: 'profileSaved', id: o.id }); break;
+      case 'delProfile':
+        this.profiles.delete(o.id);
+        for (const k of [...this.sigs.keys()]) if (k.startsWith(o.id + '-')) this.sigs.delete(k);
+        this.emit({ t: 'profileDeleted', id: o.id }); this.signals(); break;
+      case 'ping': setTimeout(() => this.onMsg({ t: 'sent', ok: true, what: 'ping' }), 300); break;
+      case 'unpair': this.emit({ t: 'status', fw: 'demo', tr: 'demo', emitter: { paired: false, online: false, mac: '', fw: '' }, learning: this.learning, busy: false, queue: 0 }); break;
     }
   }
-  close() { clearTimeout(this.learnTimer); }
 }
 
 // ======================================================================
-// Estado da página
+// Estado
 // ======================================================================
 const app = {
   link: null,
-  dev: null,                // último status do receptor
-  ac: { power: false, mode: 'cool', temp: 23, fan: 'auto', swingv: 'off', swingh: 'off',
-        turbo: false, econo: false, quiet: false, light: false, clean: false, filter: false, beep: false, sleep: false },
-  acEditedAt: 0,
-  signals: [],
-  protocols: [],
-  learnEndsAt: 0,
+  dev: null,                 // último status do receptor
+  signals: new Map(),        // chave -> { p, b, n, code }
+  profiles: [],
+  incoming: null,            // perfis chegando (um por mensagem)
+  activeId: store.get('active', null),
+  view: 'remote',
+  editing: false,
+  lastIr: null,
+  learn: null,
+  saveTimers: {},
+  cached: false,             // mostrando dados guardados (sem conexão)
 };
 const deviceHosted = location.protocol === 'http:' && !['localhost', '127.0.0.1', ''].includes(location.hostname);
 
+function makeProfile(id, name, type, order) {
+  const t = TEMPLATES[type] || TEMPLATES.custom;
+  return {
+    id, name, type, order, icon: t.icon, sendRaw: false,
+    commands: t.commands.map(([k, label]) => ({ k, label })),
+    layout: clone(t.layout),
+  };
+}
+function serializeProfile(p) {
+  return { name: p.name, type: p.type, icon: p.icon, order: p.order, sendRaw: !!p.sendRaw, commands: p.commands, layout: p.layout };
+}
+function normalizeProfile(id, d) {
+  d = d && typeof d === 'object' ? d : {};
+  return {
+    id, name: String(d.name || 'Controle'), type: TEMPLATES[d.type] ? d.type : 'custom', icon: d.icon || 'remote',
+    order: Number.isFinite(d.order) ? d.order : 99, sendRaw: !!d.sendRaw,
+    commands: Array.isArray(d.commands) ? d.commands.filter(c => c && c.k).map(c => ({ k: String(c.k), label: String(c.label || c.k) })) : [],
+    layout: Array.isArray(d.layout) ? d.layout.map(s => ({ title: String(s.title || ''), items: Array.isArray(s.items) ? s.items : [] })) : [],
+  };
+}
+
+const active = () => app.profiles.find(p => p.id === app.activeId) || app.profiles[0] || null;
+const sigKey = (p, k) => `${p.id}-${k}`;
+const hasSig = (p, k) => !!k && app.signals.has(sigKey(p, k));
+const cmdLabel = (p, k) => (p.commands.find(c => c.k === k) || {}).label || k || '';
+const recordedCount = p => p.commands.filter(c => hasSig(p, c.k)).length;
+
+function slugify(label, p) {
+  let base = String(label).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/\+/g, ' mais ').replace(/[−-]/g, ' menos ').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20) || 'cmd';
+  let k = base, n = 2;
+  while (p.commands.some(c => c.k === k)) { k = base.slice(0, 17) + '_' + n++; }
+  return k;
+}
+function newProfileId() {
+  let id;
+  do { id = 'p' + Math.random().toString(36).slice(2, 6); } while (app.profiles.some(p => p.id === id));
+  return id;
+}
+
+function cacheNow() {
+  store.set('cache', { profiles: app.profiles.map(p => ({ id: p.id, data: serializeProfile(p) })), signals: [...app.signals.keys()] });
+}
+
+// ======================================================================
+// Conexão e mensagens
+// ======================================================================
 function send(obj) {
   if (!app.link) { toast('Conecte ao receptor primeiro', 'err'); return false; }
   app.link.send(obj);
   return true;
 }
+function requireLink() {
+  if (app.link) return true;
+  toast('Conecte ao receptor para fazer alterações', 'err');
+  return false;
+}
 
-// ---------------------------------------------------------------- conexão
 async function connect(kind) {
   if (app.link) return;
   const onClose = () => {
     if (!app.link) return;
     app.link = null; app.dev = null;
-    toast('Desconectado', 'err');
+    toast('Receptor desconectado', 'err');
     renderAll();
   };
   const Link = kind === 'demo' ? DemoLink : kind === 'http' ? HttpLink : BleLink;
   const link = new Link(handleMsg, onClose);
   try {
-    $('#connText').textContent = 'conectando…';
+    $('#connText').textContent = 'Conectando…';
     await link.open();
     app.link = link;
+    app.cached = false;
+    if (kind === 'demo') { app.profiles = []; app.signals = new Map(); }
     link.send({ c: 'hello' });
-    link.send({ c: 'protocols' });
-    toast('Conectado: ' + link.name, 'ok');
+    toast('Conectado · ' + link.name);
   } catch (e) {
     console.warn(e);
     if (e && e.name === 'NotFoundError') toast('Nenhum receptor escolhido');
-    else if (e && e.name === 'SecurityError') toast('Bluetooth bloqueado neste ambiente — abra a página pelo link HTTPS', 'err');
-    else toast('Falha ao conectar: ' + (e && e.message || e), 'err');
+    else if (e && e.name === 'SecurityError') toast('Bluetooth bloqueado aqui. Abra a página pelo endereço HTTPS.', 'err');
+    else toast('Não foi possível conectar: ' + (e && e.message || e), 'err');
   }
   renderAll();
 }
 
 function disconnect() {
   const link = app.link;
+  const wasDemo = link && link.kind === 'demo';
   app.link = null; app.dev = null;
   if (link) link.close();
+  if (wasDemo) loadCache();
   renderAll();
 }
 
-// ---------------------------------------------------------------- mensagens do receptor
+function loadCache() {
+  const c = store.get('cache', null);
+  app.profiles = c && Array.isArray(c.profiles) ? c.profiles.map(x => normalizeProfile(x.id, x.data)).sort((a, b) => a.order - b.order) : [];
+  app.signals = new Map((c && c.signals || []).map(k => [k, {}]));
+  app.cached = app.profiles.length > 0;
+}
+
 function handleMsg(m) {
   switch (m.t) {
-    case 'status': {
-      app.dev = m;
-      // não sobrescreve o que o usuário acabou de mexer
-      if (Date.now() - app.acEditedAt > 1500) app.ac = Object.assign({}, app.ac, m.ac);
-      if (m.learning.active) { app.learnEndsAt = Date.now() + m.learning.left; showLearnWaiting(m.learning.key); }
-      else if (!$('#learnWaiting').hidden && !$('#learnOverlay').hidden) hideLearn();
+    case 'status': app.dev = m; renderHeader(); if (app.view === 'settings') renderSettings(); break;
+    case 'signals':
+      app.signals = new Map(m.list.map(s => [s.k, s]));
+      if (!app.link || app.link.kind !== 'demo') cacheNow();
+      renderCurrent();
+      break;
+    case 'profile': (app.incoming = app.incoming || []).push(normalizeProfile(m.id, m.data)); break;
+    case 'profilesDone':
+      app.profiles = (app.incoming || []).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+      app.incoming = null;
+      if (!active() || active().id !== app.activeId) app.activeId = app.profiles[0] ? app.profiles[0].id : null;
+      if (!app.link || app.link.kind !== 'demo') cacheNow();
       renderAll();
       break;
-    }
-    case 'signals': app.signals = m.list.sort((a, b) => a.k.localeCompare(b.k)); renderSignals(); renderMap(); renderLearnFunc(); break;
-    case 'protocols': app.protocols = m.list.sort((a, b) => a.n.localeCompare(b.n)); renderProtocols(); break;
-    case 'learned': showLearnResult(m); break;
-    case 'learnTimeout': showLearnFail(); break;
+    case 'profileSaved': case 'profileDeleted': break;
+    case 'learned': onLearned(m); break;
+    case 'learnTimeout': onLearnTimeout(); break;
     case 'sent':
-      if (m.ok) toast(m.what === 'ping' ? 'Emissor respondeu!' : 'Enviado ✓ ' + (CATALOG_LABEL[m.what] || m.what), 'ok');
-      else toast('Falhou: ' + (m.err || 'erro'), 'err');
+      if (!m.ok) toast('Falhou: ' + (m.err || 'erro'), 'err');
+      else if (m.what === 'ping') toast('O emissor respondeu');
       break;
-    case 'missing': toast('Sem sinal gravado para: ' + m.keys.join(', '), 'err'); break;
-    case 'remote': toast('Controle original detectado — estado sincronizado'); break;
-    case 'ir': {
-      const w = m.wPower === undefined ? '' : ` · energia=${m.wPower ? 1 : 0} · botão=${m.wCmd}`;
-      $('#lastIr').textContent = `${m.proto} · ${m.bits} bits${w} · ${m.hex}`;
-      break;
-    }
+    case 'ir': app.lastIr = m; if (app.view === 'settings') renderSettings(); break;
     case 'error': toast(m.msg, 'err'); break;
   }
 }
 
-// ---------------------------------------------------------------- controle do ar
-let acTimer;
-function editAc(patch, immediate = false) {
-  Object.assign(app.ac, patch);
-  app.acEditedAt = Date.now();
-  renderRemote();
-  clearTimeout(acTimer);
-  // agrupa toques rápidos (ex.: + + +) num único envio
-  acTimer = setTimeout(() => send({ c: 'ac', ac: app.ac }), immediate ? 0 : 450);
+// Salva o perfil no receptor (com um pequeno atraso para juntar alterações seguidas)
+function saveProfile(p) {
+  clearTimeout(app.saveTimers[p.id]);
+  app.saveTimers[p.id] = setTimeout(() => {
+    if (app.link) app.link.send({ c: 'saveProfile', id: p.id, data: serializeProfile(p) });
+  }, 400);
+  if (!app.link || app.link.kind !== 'demo') cacheNow();
 }
 
-function makeChips(container, list, field) {
-  const el = $(container);
-  el.innerHTML = '';
-  for (const [value, text] of list) {
-    const b = document.createElement('button');
-    b.textContent = text;
-    b.dataset.value = value;
-    b.onclick = () => editAc({ [field]: value, power: true });
-    el.appendChild(b);
+// ======================================================================
+// Ações
+// ======================================================================
+function press(k, el) {
+  const p = active();
+  if (!p) return;
+  if (!k) return toast('Este botão não tem comando. Toque em Editar para escolher um.');
+  if (!hasSig(p, k)) return askLearn(p, k);
+  if (!send({ c: 'send', key: sigKey(p, k), raw: !!p.sendRaw })) return;
+  if (navigator.vibrate) navigator.vibrate(12);
+  const tile = el && (el.closest('.tile') || el.closest('.dpad'));
+  if (tile) { tile.classList.remove('flash'); void tile.offsetWidth; tile.classList.add('flash'); }
+}
+
+async function askLearn(p, k) {
+  if (!app.link) return toast('Conecte ao receptor para gravar comandos', 'err');
+  const ok = await confirmSheet(`Gravar “${cmdLabel(p, k)}”?`, 'Este comando ainda não foi gravado. Grave agora com o controle original.', 'Gravar');
+  if (ok) startLearn(p, [k]);
+}
+
+function addCommand(p, label) {
+  const k = slugify(label, p);
+  p.commands.push({ k, label: label.trim() || k });
+  return k;
+}
+
+function deleteCommand(p, k) {
+  p.commands = p.commands.filter(c => c.k !== k);
+  for (const s of p.layout) for (const it of s.items) for (const f of ['cmd', 'up', 'down', 'left', 'right', 'ok']) if (it[f] === k) it[f] = '';
+  if (hasSig(p, k)) send({ c: 'del', key: sigKey(p, k) });
+  saveProfile(p);
+}
+
+function setView(v) {
+  if (app.view !== v && app.editing) app.editing = false;
+  app.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.view === v));
+  for (const id of ['remote', 'commands', 'profiles', 'settings']) $('#view-' + id).hidden = id !== v;
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+
+// ======================================================================
+// Gravação (fila de comandos: um ou vários em sequência)
+// ======================================================================
+let learnTick = null;
+function startLearn(p, keys) {
+  if (!requireLink() || !keys.length) return;
+  app.learn = { pid: p.id, keys, idx: 0, phase: 'wait', info: null, endsAt: 0 };
+  beginLearnStep();
+}
+function learnCurrent() {
+  const L = app.learn; if (!L) return null;
+  const p = app.profiles.find(x => x.id === L.pid);
+  return p ? { p, k: L.keys[L.idx] } : null;
+}
+function beginLearnStep() {
+  const cur = learnCurrent(); if (!cur) return;
+  app.learn.phase = 'wait'; app.learn.info = null; app.learn.endsAt = Date.now() + 15000;
+  send({ c: 'learn', key: sigKey(cur.p, cur.k) });
+  renderLearn();
+  clearInterval(learnTick);
+  learnTick = setInterval(() => {
+    if (!app.learn || app.learn.phase !== 'wait') return clearInterval(learnTick);
+    updateRing();
+  }, 250);
+}
+function onLearned(m) {
+  const cur = learnCurrent();
+  if (!cur || m.key !== sigKey(cur.p, cur.k)) { toast('Sinal gravado: ' + m.key); return; }
+  app.learn.phase = 'ok'; app.learn.info = m;
+  if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+  renderLearn();
+}
+function onLearnTimeout() {
+  if (!app.learn) return;
+  app.learn.phase = 'fail';
+  renderLearn();
+}
+function closeLearn(cancel) {
+  if (cancel && app.learn && app.learn.phase === 'wait') send({ c: 'learnCancel' });
+  app.learn = null;
+  clearInterval(learnTick);
+  closeSheet();
+  renderCurrent();
+}
+function updateRing() {
+  const fg = $('#ringFg'); if (!fg || !app.learn) return;
+  const C = 2 * Math.PI * 66;
+  const left = app.learn.phase === 'wait' ? Math.max(0, app.learn.endsAt - Date.now()) / 15000 : 1;
+  fg.style.strokeDasharray = C;
+  fg.style.strokeDashoffset = C * (1 - left);
+  const s = $('#ringSecs'); if (s) s.textContent = Math.ceil(left * 15) + ' s';
+}
+function renderLearn() {
+  const L = app.learn, cur = learnCurrent(); if (!L || !cur) return;
+  const label = cmdLabel(cur.p, cur.k);
+  const step = L.keys.length > 1 ? `<div class="eyebrow">${L.idx + 1} de ${L.keys.length} · ${esc(cur.p.name)}</div>` : `<div class="eyebrow">${esc(cur.p.name)}</div>`;
+  const hasNext = L.idx < L.keys.length - 1;
+  const nextLabel = hasNext ? cmdLabel(cur.p, L.keys[L.idx + 1]) : '';
+  let body, actions;
+  if (L.phase === 'wait') {
+    body = `<div class="learn">${step}
+      <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
+        <div class="center pulse">${icon('remote')}</div></div>
+      <h2>Aperte “${esc(label)}”</h2>
+      <p>Aponte o controle original para o receptor e aperte o botão uma vez. <span id="ringSecs" class="mono"></span></p></div>`;
+    actions = [{ label: 'Cancelar', act: () => closeLearn(true) }];
+  } else if (L.phase === 'ok') {
+    const i = L.info || {};
+    body = `<div class="learn ok">${step}
+      <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
+        <div class="center">${icon('check')}</div></div>
+      <h2>“${esc(label)}” gravado</h2>
+      <p class="mono">${esc(i.proto || 'RAW')}${i.bits ? ' · ' + i.bits + ' bits' : ''} · ${i.n || 0} tempos</p></div>`;
+    actions = [
+      { label: 'Testar', icon: 'play', act: () => send({ c: 'send', key: sigKey(cur.p, cur.k), raw: !!cur.p.sendRaw }) },
+      { label: 'Regravar', act: () => beginLearnStep() },
+      hasNext ? { label: 'Próximo: ' + nextLabel, cls: 'primary', act: () => { L.idx++; beginLearnStep(); } }
+              : { label: 'Concluir', cls: 'primary', act: () => closeLearn(false) },
+    ];
+  } else {
+    body = `<div class="learn fail">${step}
+      <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
+        <div class="center">${icon('x')}</div></div>
+      <h2>Nenhum sinal recebido</h2>
+      <p>Chegue o controle mais perto do receptor IR (até 30 cm) e tente de novo.</p></div>`;
+    actions = [
+      { label: 'Fechar', act: () => closeLearn(false) },
+      hasNext ? { label: 'Pular', act: () => { L.idx++; beginLearnStep(); } } : null,
+      { label: 'Tentar de novo', cls: 'primary', act: () => beginLearnStep() },
+    ].filter(Boolean);
+  }
+  openSheet(body, actions, { onCancel: () => closeLearn(true) });
+  updateRing();
+}
+
+// ======================================================================
+// Folha (dialog) genérica
+// ======================================================================
+let sheetCancel = null;
+function openSheet(html, actions = [], opts = {}) {
+  const d = $('#sheet');
+  sheetCancel = opts.onCancel || null;
+  $('#sheetIn').innerHTML = `<div class="grabber"></div>${html}` +
+    (actions.length ? `<div class="sheet-actions">${actions.map((a, i) =>
+      `<button type="button" class="btn ${a.cls || ''}" data-a="${i}">${a.icon ? icon(a.icon) : ''}${esc(a.label)}</button>`).join('')}</div>` : '');
+  $('#sheetIn').querySelectorAll('[data-a]').forEach(b => b.onclick = () => actions[+b.dataset.a].act());
+  if (!d.open) d.showModal();
+  const inner = $('#sheetIn');
+  inner.tabIndex = -1;
+  inner.focus({ preventScroll: true });  // sem anel de foco no primeiro botão
+  if (opts.onMount) opts.onMount(inner);
+}
+function closeSheet() { sheetCancel = null; const d = $('#sheet'); if (d.open) d.close(); }
+$('#sheet').addEventListener('cancel', e => { e.preventDefault(); const c = sheetCancel; if (c) c(); else closeSheet(); });
+$('#sheet').addEventListener('click', e => { if (e.target === $('#sheet')) { const c = sheetCancel; if (c) c(); else closeSheet(); } });
+
+function confirmSheet(title, text, okLabel = 'Confirmar', danger = false) {
+  return new Promise(res => {
+    const done = v => { closeSheet(); res(v); };
+    openSheet(`<h2>${esc(title)}</h2><p class="hint">${text}</p>`,
+      [{ label: 'Cancelar', act: () => done(false) }, { label: okLabel, cls: danger ? 'danger' : 'primary', act: () => done(true) }],
+      { onCancel: () => done(false) });
+  });
+}
+
+let toastTimer = null;
+function toast(msg, kind = '') {
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'toast' + (kind === 'err' ? ' err' : ''); t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, kind === 'err' ? 3800 : 2200);
+}
+
+// ======================================================================
+// Render: topo e perfis
+// ======================================================================
+function renderHeader() {
+  const d = app.dev, p = active();
+  const dot = $('#connDot');
+  dot.className = 'dot' + (app.link ? (d && d.emitter && d.emitter.online ? ' on' : ' warn') : '');
+  $('#connText').textContent = !app.link ? 'Conectar' : (d && d.emitter && d.emitter.online ? 'Conectado' : 'Emissor offline');
+  const titles = { remote: p ? p.name : 'Controles', commands: 'Comandos', profiles: 'Perfis', settings: 'Ajustes' };
+  $('#topTitle').textContent = titles[app.view];
+  $('#topEyebrow').textContent = app.view === 'remote' ? (p ? TEMPLATES[p.type].name : 'Controle universal')
+    : app.view === 'commands' ? (p ? p.name : 'Nenhum controle') : 'Controle universal';
+  const showChips = (app.view === 'remote' || app.view === 'commands') && app.profiles.length > 0;
+  $('#chips').hidden = !showChips;
+  if (showChips) {
+    $('#chips').innerHTML = app.profiles.map(x =>
+      `<button type="button" class="chip ${p && x.id === p.id ? 'on' : ''}" data-pid="${esc(x.id)}">${icon(x.icon)}${esc(x.name)}</button>`).join('')
+      + `<button type="button" class="chip add" data-new="1">${icon('plus')}Novo</button>`;
   }
 }
 
-function setupRemote() {
-  makeChips('#chipsMode', MODES, 'mode');
-  makeChips('#chipsFan', FANS, 'fan');
-  makeChips('#chipsSwingV', SWINGV, 'swingv');
-  makeChips('#chipsSwingH', SWINGH, 'swingh');
-  const ex = $('#chipsExtra');
-  for (const [key, text] of EXTRAS) {
-    const b = document.createElement('button');
-    b.textContent = text;
-    b.dataset.value = key;
-    b.onclick = () => editAc({ [key]: !app.ac[key] });
-    ex.appendChild(b);
+// ======================================================================
+// Render: controle (layout editável)
+// ======================================================================
+function missDot(p, k) { return hasSig(p, k) ? '' : '<span class="miss-dot" aria-label="não gravado"></span>'; }
+
+function renderItem(p, it, si, ii) {
+  const at = `data-s="${si}" data-i="${ii}"`;
+  if (it.type === 'rocker') {
+    const part = (k, ic, cls) => `<button type="button" class="rk ${cls} ${hasSig(p, k) ? '' : 'missing'}" data-cmd="${esc(k)}" aria-label="${esc(cmdLabel(p, k))}">${icon(ic)}${missDot(p, k)}</button>`;
+    return `<div class="tile rocker" ${at}>${part(it.up, 'plus', 'up')}<span class="rk-label">${esc(it.label || '')}</span>${part(it.down, 'minus', 'down')}</div>`;
   }
-  $('#btnPower').onclick = () => editAc({ power: !app.ac.power }, true);
-  const step = d => editAc({ temp: Math.min(TEMP_MAX, Math.max(TEMP_MIN, (app.ac.temp || 24) + d)), power: true });
-  $('#btnTempUp').onclick = () => step(1);
-  $('#btnTempDown').onclick = () => step(-1);
-  $('#btnResend').onclick = () => send({ c: 'resend' }) && toast('Reenviando estado…');
+  if (it.type === 'dpad') {
+    const part = (k, cls, inner) => `<button type="button" class="dp ${cls} ${hasSig(p, k) ? '' : 'missing'}" data-cmd="${esc(k)}" aria-label="${esc(cmdLabel(p, k))}">${inner}${missDot(p, k)}</button>`;
+    return `<div class="dpad-wrap" ${at}><div class="dpad">${part(it.up, 'up', icon('up'))}${part(it.left, 'left', icon('left'))}`
+      + `${part(it.ok, 'ok', 'OK')}${part(it.right, 'right', icon('right'))}${part(it.down, 'down', icon('down'))}</div></div>`;
+  }
+  const w = Math.min(4, Math.max(1, +it.w || 1));
+  const label = it.label || cmdLabel(p, it.cmd) || 'Sem comando';
+  const miss = !hasSig(p, it.cmd);
+  return `<button type="button" class="tile c-${esc(it.color || 'default')} ${miss ? 'missing' : ''}" style="grid-column: span ${w}" ${at} data-cmd="${esc(it.cmd || '')}">`
+    + `${icon(it.icon)}<span class="tl">${esc(label)}</span>${it.cmd ? missDot(p, it.cmd) : ''}</button>`;
 }
 
 function renderRemote() {
-  const a = app.ac;
-  $('#lcd').classList.toggle('off', !a.power);
-  $('#lcdTemp').textContent = a.power ? String(a.temp).padStart(2, '0') : 'OFF';
-  $('#lcdMode').textContent = label(MODES, a.mode);
-  const fanIdx = FANS.findIndex(f => f[0] === a.fan);
-  $('#lcdFan').innerHTML = a.fan === 'auto' ? 'VENT AUTO'
-    : 'VENT <span class="bars">' + '▮'.repeat(fanIdx) + '▯'.repeat(5 - fanIdx) + '</span>';
-  $('#lcdSwing').textContent = 'V:' + label(SWINGV, a.swingv);
-  $('#lcdSwingH').textContent = 'H:' + label(SWINGH, a.swingh);
-  $('#lcdFlags').innerHTML = EXTRAS.map(([k, t]) => `<span class="${a[k] ? 'on' : ''}">${t}</span>`).join('');
-
-  const power = $('#btnPower');
-  power.classList.toggle('on', !!a.power);
-  power.textContent = a.power ? 'Ligado' : 'Desligado';
-  const mark = (sel, value) => document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('sel', b.dataset.value === value));
-  mark('#chipsMode', a.mode);
-  mark('#chipsFan', a.fan);
-  mark('#chipsSwingV', a.swingv);
-  mark('#chipsSwingH', a.swingh);
-  document.querySelectorAll('#chipsExtra button').forEach(b => b.classList.toggle('sel', !!a[b.dataset.value]));
-
-  const d = app.dev;
-  const info = $('#ctrlInfo');
-  const banner = $('#modeBanner');
-  if (!d) { info.textContent = 'Desconectado'; banner.hidden = true; return; }
-  info.innerHTML = (d.learnedMode ? 'Modo APRENDIDO' : 'Protocolo ' + esc(d.proto || '—'))
-    + (d.busy || d.queue ? '<span class="busy-dot" title="enviando"></span>' : '');
-  if (!d.learnedMode && !d.protoOk) {
-    banner.hidden = false;
-    banner.innerHTML = '<b>PROTOCOLO NÃO DEFINIDO</b>Grave um botão do controle original (aba GRAVAR) para detectar o protocolo, escolha-o em CONFIG, ou mude para o modo APRENDIDO.';
-  } else if (!d.emitter.online) {
-    banner.hidden = false;
-    banner.innerHTML = '<b>EMISSOR OFFLINE</b>' + (d.emitter.paired ? 'Verifique se o ESP-01 está ligado.' : 'Ligue o ESP-01: ele pareia sozinho.');
-  } else banner.hidden = true;
-}
-
-// ---------------------------------------------------------------- gravação
-function hasSignal(k) { return app.signals.some(s => s.k === k); }
-
-async function learn(rawKey) {
-  const key = sanitizeKey(rawKey) || 'rapido';
-  if (!app.link) return toast('Conecte ao receptor primeiro', 'err');
-  if (hasSignal(key)) {
-    const r = await dialog({ title: 'SUBSTITUIR?', body: `Já existe um sinal <b>${esc(key)}</b>. Gravar por cima?`,
-      buttons: [{ label: 'Cancelar', value: false }, { label: 'Gravar', value: true, cls: 'dark' }] });
-    if (!r.value) return;
-  }
-  send({ c: 'learn', key });
-  showLearnWaiting(key);
-  app.learnEndsAt = Date.now() + 15000;
-}
-
-let learnTick;
-function showLearnWaiting(key) {
-  $('#learnOverlay').hidden = false;
-  $('#learnWaiting').hidden = false;
-  $('#learnResult').hidden = true;
-  $('#learnTitle').textContent = 'GRAVANDO…';
-  $('#learnKey').textContent = key;
-  const actions = $('#learnActions');
-  actions.innerHTML = '';
-  const cancel = document.createElement('button');
-  cancel.textContent = 'Cancelar';
-  cancel.onclick = () => { send({ c: 'learnCancel' }); hideLearn(); };
-  actions.appendChild(cancel);
-  clearInterval(learnTick);
-  learnTick = setInterval(() => {
-    const left = Math.max(0, app.learnEndsAt - Date.now());
-    $('#learnBar').style.width = (left / 150) + '%';
-  }, 200);
-}
-
-function hideLearn() {
-  clearInterval(learnTick);
-  $('#learnOverlay').hidden = true;
-}
-
-function showLearnResult(m) {
-  clearInterval(learnTick);
-  $('#learnOverlay').hidden = false;
-  $('#learnWaiting').hidden = true;
-  const res = $('#learnResult');
-  res.hidden = false;
-  $('#learnTitle').textContent = 'GRAVADO ✓';
-  let html = `<dl class="kv"><dt>Nome</dt><dd>${esc(m.key)}</dd><dt>Protocolo</dt><dd>${esc(m.proto)}</dd>`
-    + (m.bits ? `<dt>Bits</dt><dd>${m.bits}</dd>` : '') + `<dt>Pulsos</dt><dd>${m.n}</dd></dl>`;
-  if (m.autoSet) html += `<p class="hint">Protocolo de ar <b>${esc(m.proto)}</b> reconhecido e configurado: o controle completo já funciona!</p>`;
-  else if (m.acCapable && app.dev && app.dev.protoId !== m.protoId) html += `<p class="hint">Este é um protocolo de ar suportado (<b>${esc(m.proto)}</b>).</p>`;
-  res.innerHTML = html;
-
-  const actions = $('#learnActions');
-  actions.innerHTML = '';
-  const add = (text, cls, fn) => { const b = document.createElement('button'); b.textContent = text; b.className = cls; b.onclick = fn; actions.appendChild(b); };
-  if (m.acCapable && !m.autoSet && app.dev && app.dev.protoId !== m.protoId)
-    add('Usar protocolo', 'accent', () => { send({ c: 'setProto', id: m.protoId, model: -1 }); hideLearn(); });
-  add('Testar', '', () => send({ c: 'send', key: m.key }));
-  add('OK', 'dark', hideLearn);
-  toast('Sinal gravado: ' + m.key, 'ok');
-}
-
-function showLearnFail() {
-  clearInterval(learnTick);
-  $('#learnOverlay').hidden = false;
-  $('#learnWaiting').hidden = true;
-  $('#learnResult').hidden = false;
-  $('#learnTitle').textContent = 'NADA RECEBIDO';
-  $('#learnResult').innerHTML = '<p>Nenhum sinal chegou em 15 s. Aponte o controle direto para o receptor IR, bem perto, e tente de novo.</p>';
-  const actions = $('#learnActions');
-  actions.innerHTML = '';
-  const ok = document.createElement('button');
-  ok.textContent = 'OK'; ok.className = 'dark'; ok.onclick = hideLearn;
-  actions.appendChild(ok);
-}
-
-function renderLearnFunc() {
-  const sel = $('#learnFunc');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">— sinal livre (outro aparelho) —</option>' + CATALOG.map(g =>
-    `<optgroup label="${esc(g.title)}">` + g.keys.map(([k, l]) =>
-      `<option value="${k}">${hasSignal(k) ? '✓ ' : ''}${esc(l)} (${k})</option>`).join('') + '</optgroup>').join('');
-  sel.value = current;
-}
-
-function renderSignals() {
-  const list = $('#sigList');
-  $('#sigCount').textContent = app.signals.length;
-  if (!app.signals.length) { list.innerHTML = '<li class="empty">Nenhum sinal gravado ainda</li>'; return; }
-  list.innerHTML = app.signals.map(s => `
-    <li>
-      <div class="sig-name">
-        <b>${esc(CATALOG_LABEL[s.k] || s.k)}</b>
-        <small>${esc(s.k)} · ${esc(s.p)}${s.b ? ' ' + s.b + 'b' : ''} · ${s.n} pulsos</small>
+  const v = $('#view-remote');
+  const p = active();
+  if (!p) {
+    v.innerHTML = `<div class="card empty"><div class="big">${icon('remote')}</div><h2>Nenhum controle ainda</h2>
+      <p>Adicione um controle (ar-condicionado, TV, ventilador…), grave os botões do controle original e monte a sua tela.</p>
+      <div class="row" style="justify-content:center">
+        <button type="button" class="btn primary" data-go="new">${icon('plus')}Adicionar controle</button>
+        ${app.link ? '' : `<button type="button" class="btn" data-go="connect">${icon('bt')}Conectar</button>`}
       </div>
-      <button class="small dark" data-act="send" data-key="${esc(s.k)}">▶</button>
-      <button class="small" data-act="rename" data-key="${esc(s.k)}">✎</button>
-      <button class="small pink" data-act="del" data-key="${esc(s.k)}">✕</button>
-    </li>`).join('');
-}
-
-async function signalAction(act, key) {
-  if (act === 'send') { send({ c: 'send', key }); return; }
-  if (act === 'del') {
-    const r = await dialog({ title: 'APAGAR SINAL', body: `Apagar <b>${esc(key)}</b>?`,
-      buttons: [{ label: 'Cancelar', value: false }, { label: 'Apagar', value: true, cls: 'pink' }] });
-    if (r.value) send({ c: 'del', key });
+      ${!app.link ? '<p class="hint">Sem receptor por perto? Use o modo demonstração em Ajustes.</p>' : ''}</div>`;
+    return;
   }
-  if (act === 'rename') {
-    const r = await dialog({ title: 'RENOMEAR', body: 'Novo nome (a-z, 0-9, _ e -):', input: key,
-      buttons: [{ label: 'Cancelar', value: false }, { label: 'Salvar', value: true, cls: 'dark' }] });
-    const to = sanitizeKey(r.text);
-    if (r.value && to && to !== key) send({ c: 'rename', from: key, to });
+  const total = p.commands.length, rec = recordedCount(p);
+  let html = '';
+  if (app.cached && !app.link) html += `<div class="banner"><b>Sem conexão</b>Mostrando a última versão salva neste aparelho. Conecte ao receptor para usar o controle.</div>`;
+  if (app.editing) {
+    html += `<div class="editbar"><span>Editando o layout de ${esc(p.name)}</span><button type="button" class="btn small" data-go="doneEdit">Concluir</button></div>`;
+  } else {
+    html += `<div class="row" style="justify-content:space-between">
+      <span class="hint">${rec} de ${total} comandos gravados</span>
+      <div class="row">
+        ${rec < total ? `<button type="button" class="btn small" data-go="learnPending">${icon('rec')}Gravar pendentes</button>` : ''}
+        <button type="button" class="btn small" data-go="edit">${icon('edit')}Editar</button>
+      </div></div>`;
   }
-  if (act === 'relearn') learn(key);
-}
-
-function renderMap() {
-  const box = $('#mapGroups');
-  const open = new Set([...box.querySelectorAll('details[open]')].map(d => d.dataset.title));
-  let mapped = 0;
-  box.innerHTML = CATALOG.map(g => {
-    const done = g.keys.filter(([k]) => hasSignal(k)).length;
-    mapped += done;
-    return `<details class="map" data-title="${esc(g.title)}" ${open.has(g.title) ? 'open' : ''}>
-      <summary><span>${esc(g.title)}</span><span>${done}/${g.keys.length}</span></summary>
-      <div class="map-grid">${g.keys.map(([k, l]) =>
-        `<button class="${hasSignal(k) ? 'ok' : ''}" data-map="${k}" title="${k}">${esc(l)}</button>`).join('')}</div>
-    </details>`;
-  }).join('');
-  $('#mapCount').textContent = mapped + ' gravadas';
-}
-
-async function mapAction(key) {
-  if (!hasSignal(key)) return learn(key);
-  const r = await dialog({ title: (CATALOG_LABEL[key] || key).toUpperCase(), body: `Sinal <b>${esc(key)}</b> já gravado.`,
-    buttons: [{ label: 'Fechar', value: '' }, { label: 'Apagar', value: 'del', cls: 'pink' },
-              { label: 'Regravar', value: 'relearn' }, { label: 'Enviar', value: 'send', cls: 'dark' }] });
-  if (r.value === 'relearn') { send({ c: 'learn', key }); showLearnWaiting(key); app.learnEndsAt = Date.now() + 15000; }
-  else if (r.value) signalAction(r.value, key);
-}
-
-// ---------------------------------------------------------------- config
-// Protocolos mais encontrados em cada marca, em ordem de probabilidade.
-// Cada candidato: [protocolo, modelo (-1 = padrão), descrição].
-const BRANDS = {
-  elgin: {
-    name: 'Elgin', tag: 'piso-teto',
-    hint: 'A Elgin não tem protocolo próprio: usa o do fabricante de cada modelo (Midea, Gree, AUX, TCL, Haier...).',
-    cands: [
-      ['COOLIX', -1, 'Midea/Coolix: comum em piso-teto e cassete'],
-      ['MIDEA', -1, 'Midea (controles RG57/RG66)'],
-      ['GREE', -1, 'Gree (controles YAP/YB1F)'],
-      ['ELECTRA_AC', -1, 'AUX (controles YKR-H/YKR-K)'],
-      ['SAMSUNG_AC', -1, 'já relatado em Elgin'],
-      ['TCL112AC', -1, 'TCL'],
-      ['HAIER_AC', -1, 'Haier'],
-      ['HAIER_AC_YRW02', -1, 'Haier (YR-W02)'],
-      ['KELON', -1, 'Kelon/Hisense'],
-      ['CARRIER_AC64', -1, 'Carrier/Springer'],
-      ['TECO', -1, 'Teco'],
-      ['LG', -1, 'LG'],
-    ],
-  },
-  philco: {
-    name: 'Philco', tag: 'britânia',
-    hint: 'A Philco (Britânia) não tem protocolo próprio: usa o do fabricante de cada linha (Gree, TCL, Midea, AUX...). O controle Philco das famílias M/M2/M3... troca de família conforme o aparelho, por isso o protocolo varia entre modelos.',
-    cands: [
-      ['GREE', -1, 'Gree'],
-      ['TCL112AC', -1, 'TCL'],
-      ['MIDEA', -1, 'Midea (controles RG57/RG66)'],
-      ['COOLIX', -1, 'Midea/Coolix'],
-      ['ELECTRA_AC', -1, 'AUX (controles YKR-H/YKR-K)'],
-      ['HAIER_AC', -1, 'Haier'],
-      ['HAIER_AC_YRW02', -1, 'Haier (YR-W02)'],
-      ['KELON', -1, 'Kelon/Hisense'],
-      ['SAMSUNG_AC', -1, 'Samsung'],
-      ['LG', -1, 'LG'],
-    ],
-  },
-  consul: {
-    name: 'Consul', tag: 'CBK12BXNA',
-    hint: 'A Consul é da Whirlpool: o receptor já vem com WHIRLPOOL_AC modelo 2 (Consul CBK12BXNA, controle W11683858). Se a temperatura no display do ar não bater com a da página, use o modelo 1. No Consul, cada sinal diz se o ar fica ligado ou desligado (veja LIGA/DESLIGA WHIRLPOOL abaixo).',
-    cands: [
-      ['WHIRLPOOL_AC', 2, 'Whirlpool DG11J1-91 (16–30°): padrão para CBK12BXNA'],
-      ['WHIRLPOOL_AC', 1, 'Whirlpool DG11J1-3A / DG11J1-04 (18–32°)'],
-      ['MIDEA', -1, 'Midea (controles RG57/RG66)'],
-      ['COOLIX', -1, 'Midea/Coolix'],
-      ['GREE', -1, 'Gree'],
-      ['ELECTRA_AC', -1, 'AUX'],
-      ['TCL112AC', -1, 'TCL'],
-      ['SAMSUNG_AC', -1, 'Samsung'],
-      ['LG', -1, 'LG'],
-    ],
-  },
-};
-const BRAND_TEST_STATE = { power: true, mode: 'cool', temp: 23, fan: 'auto', swingv: 'auto' };
-let brand = localStorage.getItem('brand') in BRANDS ? localStorage.getItem('brand') : 'elgin';
-let brandLastTried = null;
-
-function brandCandidates() {
-  return BRANDS[brand].cands.map(([n, model, desc]) => ({ p: app.protocols.find(p => p.n === n), model, desc })).filter(c => c.p);
-}
-
-function renderProtocols() {
-  const sel = $('#protoSelect');
-  const likely = [...new Set(brandCandidates().map(c => c.p))];
-  const others = app.protocols.filter(p => !likely.includes(p));
-  const opts = list => list.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join('');
-  sel.innerHTML = '<option value="-1">— nenhum (usar modo aprendido) —</option>'
-    + `<optgroup label="Prováveis para ${esc(BRANDS[brand].name)}">${opts(likely)}</optgroup>`
-    + `<optgroup label="Outros">${opts(others)}</optgroup>`;
-  if (app.dev) sel.value = String(app.dev.protoId);
-  renderBrand();
-}
-
-function renderBrand() {
-  const b = BRANDS[brand];
-  $('#brandSeg').innerHTML = Object.entries(BRANDS).map(([k, v]) =>
-    `<button data-brand="${k}" class="${k === brand ? 'sel' : ''}">${esc(v.name)}</button>`).join('');
-  $('#brandTag').textContent = b.tag;
-  $('#brandHint').textContent = b.hint;
-  const list = $('#brandList');
-  const cands = brandCandidates();
-  if (!cands.length) { list.innerHTML = '<li class="empty">Conecte ao receptor para listar</li>'; return; }
-  const d = app.dev;
-  list.innerHTML = cands.map(({ p, model, desc }, i) => {
-    const current = d && d.protoId === p.id && (model < 0 || Number(d.model) === model);
-    return `
-    <li>
-      <div class="sig-name"><b>${current ? '✓ ' : ''}${esc(p.n)}${model >= 0 ? ' · modelo ' + model : ''}</b><small>${esc(desc)}</small></div>
-      <button class="small" data-try="${i}">Testar</button>
-      <button class="small dark" data-use="${i}">Usar</button>
-    </li>`;
-  }).join('');
-}
-
-function renderConfig() {
-  const d = app.dev;
-  $('#cfgConn').textContent = app.link ? 'conectado' : 'desconectado';
-  $('#cfgVia').textContent = app.link ? app.link.name : '—';
-  $('#cfgFw').textContent = d ? d.fw : '—';
-  $('#cfgPaired').textContent = d ? (d.emitter.paired ? 'sim' : 'não') : '—';
-  $('#cfgMac').textContent = d && d.emitter.mac || '—';
-  $('#cfgEmFw').textContent = d && d.emitter.fw || '—';
-  $('#cfgEmitterTag').textContent = !d ? '—' : d.emitter.online ? 'ONLINE' : 'OFFLINE';
-  $('#cfgProtoTag').textContent = d ? (d.proto || 'nenhum') : '—';
-  $('#btnModeProto').classList.toggle('sel', !!d && !d.learnedMode);
-  $('#btnModeLearned').classList.toggle('sel', !!d && d.learnedMode);
-  $('#btnPowerAbs').classList.toggle('sel', !!d && d.powerAbs !== false);
-  $('#btnPowerToggle').classList.toggle('sel', !!d && d.powerAbs === false);
-  if (d && document.activeElement !== $('#protoSelect')) {
-    if (app.protocols.length) $('#protoSelect').value = String(d.protoId);
-    if (document.activeElement !== $('#protoModel')) $('#protoModel').value = d.model;
+  p.layout.forEach((s, si) => {
+    const head = app.editing
+      ? `<div class="section-head"><input type="text" aria-label="Nome da seção" value="${esc(s.title)}" data-stitle="${si}" maxlength="30" placeholder="Nome da seção">
+          <button type="button" class="icon-btn" data-smove="${si}:-1" aria-label="Subir seção" ${si === 0 ? 'disabled' : ''}>${icon('up')}</button>
+          <button type="button" class="icon-btn" data-smove="${si}:1" aria-label="Descer seção" ${si === p.layout.length - 1 ? 'disabled' : ''}>${icon('down')}</button>
+          <button type="button" class="icon-btn" data-sdel="${si}" aria-label="Apagar seção">${icon('trash')}</button></div>`
+      : (s.title ? `<div class="section-head"><h3>${esc(s.title)}</h3></div>` : '');
+    const items = s.items.map((it, ii) => renderItem(p, it, si, ii)).join('');
+    const add = app.editing ? `<button type="button" class="tile add" data-add="${si}">${icon('plus')}<span class="tl">Botão</span></button>` : '';
+    if (!items && !app.editing) return;
+    html += `<div class="section">${head}<div class="grid">${items}${add}</div></div>`;
+  });
+  if (app.editing) html += `<button type="button" class="add-section" data-go="addSection">${icon('plus')}Nova seção</button>`;
+  else if (!p.layout.some(s => s.items.length)) {
+    html += `<div class="card empty"><div class="big">${icon('grid')}</div><h2>Tela vazia</h2><p>Toque em Editar para adicionar botões a este controle.</p></div>`;
   }
-  renderBrand();
-  $('#btnDemo').textContent = app.link instanceof DemoLink ? 'Sair do demo' : 'Modo demo';
-  $('#btnDemo').disabled = !!app.link && !(app.link instanceof DemoLink);
+  v.innerHTML = html;
+  v.classList.toggle('editing', app.editing);
 }
 
-function renderHeader() {
-  const d = app.dev;
-  const led = $('#connLed');
-  led.className = 'led' + (app.link ? (d && d.emitter.online ? ' on' : ' warn') : '');
-  $('#connText').textContent = !app.link ? 'desconectado'
-    : app.link.name + (d ? (d.emitter.online ? ' · emissor ok' : ' · emissor offline') : '');
-  $('#btnConnect').textContent = app.link ? 'Sair' : 'Conectar';
+// ---------- editor de botão ----------
+function openItemEditor(si, ii) {
+  if (!requireLink()) return;
+  const p = active();
+  const isNew = ii == null;
+  const draft = isNew ? B('', '', 'star', 'default', 1) : clone(p.layout[si].items[ii]);
+  draft.newName = '';
+
+  const cmdOptions = (sel, allowNew) => `<option value="">— nenhum —</option>`
+    + p.commands.map(c => `<option value="${esc(c.k)}" ${c.k === sel ? 'selected' : ''}>${esc(c.label)}${hasSig(p, c.k) ? '' : ' (não gravado)'}</option>`).join('')
+    + (allowNew ? `<option value="__new" ${sel === '__new' ? 'selected' : ''}>＋ Novo comando…</option>` : '');
+
+  const render = () => {
+    const t = draft.type;
+    let fields = `<div class="field">Tipo<div class="seg" role="group">
+      ${[['button', 'Botão'], ['rocker', 'Par + / −'], ['dpad', 'Direcional']].map(([v, l]) => `<button type="button" data-type="${v}" class="${t === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+    if (t === 'button') {
+      fields += `<label class="field">Comando<select id="fCmd">${cmdOptions(draft.cmd, true)}</select></label>
+        <label class="field" id="fNewWrap" ${draft.cmd === '__new' ? '' : 'hidden'}>Nome do novo comando<input id="fNew" type="text" maxlength="30" placeholder="Ex.: Frio 23°" value="${esc(draft.newName)}"></label>
+        <label class="field">Texto do botão<input id="fLabel" type="text" maxlength="24" placeholder="${esc(cmdLabel(p, draft.cmd) || 'Texto')}" value="${esc(draft.label)}"></label>
+        <div class="field">Ícone<div class="icon-grid">
+          <button type="button" data-icon="" class="${!draft.icon ? 'on' : ''}" aria-label="Sem ícone">—</button>
+          ${PICK_ICONS.map(n => `<button type="button" data-icon="${n}" class="${draft.icon === n ? 'on' : ''}" aria-label="${n}">${icon(n)}</button>`).join('')}</div></div>
+        <div class="field">Cor<div class="swatches">${COLORS.map(([v, l, c]) => `<button type="button" data-color="${v}" class="${(draft.color || 'default') === v ? 'on' : ''}" style="background:${c}" aria-label="${l}"></button>`).join('')}</div></div>
+        <div class="field">Largura<div class="seg">${[1, 2, 3, 4].map(n => `<button type="button" data-w="${n}" class="${(+draft.w || 1) === n ? 'on' : ''}">${n === 4 ? 'Linha toda' : n}</button>`).join('')}</div></div>`;
+    } else if (t === 'rocker') {
+      fields += `<label class="field">Texto<input id="fLabel" type="text" maxlength="12" placeholder="Ex.: Vol" value="${esc(draft.label || '')}"></label>
+        <label class="field">Comando do +<select id="fUp">${cmdOptions(draft.up)}</select></label>
+        <label class="field">Comando do −<select id="fDown">${cmdOptions(draft.down)}</select></label>`;
+    } else {
+      fields += ['up', 'down', 'left', 'right', 'ok'].map(f => `<label class="field">${{ up: 'Cima', down: 'Baixo', left: 'Esquerda', right: 'Direita', ok: 'Centro (OK)' }[f]}
+        <select data-dir="${f}">${cmdOptions(draft[f])}</select></label>`).join('');
+    }
+    const actions = [];
+    if (!isNew) {
+      actions.push({ label: '', icon: 'left', act: () => moveItem(-1) }, { label: '', icon: 'right', act: () => moveItem(1) });
+      actions.push({ label: 'Apagar', cls: 'danger', act: () => { p.layout[si].items.splice(ii, 1); saveProfile(p); closeSheet(); renderRemote(); } });
+    }
+    actions.push({ label: isNew ? 'Adicionar' : 'Salvar', cls: 'primary', act: save });
+    openSheet(`<h2>${isNew ? 'Novo botão' : 'Editar botão'}</h2>${fields}`, actions, {
+      onMount: root => {
+        root.querySelectorAll('[data-type]').forEach(b => b.onclick = () => {
+          collect(root);
+          draft.type = b.dataset.type;
+          if (draft.type === 'rocker') { draft.up = draft.up || ''; draft.down = draft.down || ''; }
+          if (draft.type === 'dpad') ['up', 'down', 'left', 'right', 'ok'].forEach(f => draft[f] = draft[f] || (p.commands.some(c => c.k === f) ? f : ''));
+          render();
+        });
+        root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => { collect(root); draft.icon = b.dataset.icon; render(); });
+        root.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { collect(root); draft.color = b.dataset.color; render(); });
+        root.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { collect(root); draft.w = +b.dataset.w; render(); });
+        const fc = $('#fCmd', root);
+        if (fc) fc.onchange = () => { collect(root); render(); };
+      },
+    });
+  };
+  const collect = root => {
+    const v = id => { const e = $('#' + id, root); return e ? e.value : undefined; };
+    if (v('fCmd') !== undefined) draft.cmd = v('fCmd');
+    if (v('fNew') !== undefined) draft.newName = v('fNew');
+    if (v('fLabel') !== undefined) draft.label = v('fLabel');
+    if (v('fUp') !== undefined) draft.up = v('fUp');
+    if (v('fDown') !== undefined) draft.down = v('fDown');
+    root.querySelectorAll('[data-dir]').forEach(s => draft[s.dataset.dir] = s.value);
+  };
+  const moveItem = dir => {
+    const items = p.layout[si].items, j = ii + dir;
+    if (j < 0 || j >= items.length) return;
+    [items[ii], items[j]] = [items[j], items[ii]];
+    ii = j; saveProfile(p); renderRemote();
+  };
+  const save = () => {
+    collect($('#sheetIn'));
+    let out;
+    if (draft.type === 'button') {
+      let cmd = draft.cmd;
+      if (cmd === '__new') {
+        if (!draft.newName.trim()) return toast('Dê um nome ao novo comando', 'err');
+        cmd = addCommand(p, draft.newName);
+      }
+      out = { type: 'button', cmd, label: (draft.label || '').trim(), icon: draft.icon || '', color: draft.color || 'default', w: +draft.w || 1 };
+    } else if (draft.type === 'rocker') {
+      out = { type: 'rocker', label: (draft.label || '').trim(), up: draft.up || '', down: draft.down || '' };
+    } else {
+      out = { type: 'dpad', up: draft.up || '', down: draft.down || '', left: draft.left || '', right: draft.right || '', ok: draft.ok || '' };
+    }
+    if (isNew) p.layout[si].items.push(out); else p.layout[si].items[ii] = out;
+    saveProfile(p); closeSheet(); renderRemote();
+  };
+  render();
 }
 
-function renderAll() { renderHeader(); renderRemote(); renderConfig(); }
+// ======================================================================
+// Render: comandos
+// ======================================================================
+function renderCommands() {
+  const v = $('#view-commands');
+  const p = active();
+  if (!p) { v.innerHTML = `<div class="card empty"><div class="big">${icon('list')}</div><h2>Nenhum controle</h2><p>Crie um controle em Perfis para começar a gravar comandos.</p>
+    <button type="button" class="btn primary" data-go="new">${icon('plus')}Adicionar controle</button></div>`; return; }
+  const total = p.commands.length, rec = recordedCount(p);
+  const pending = p.commands.filter(c => !hasSig(p, c.k)).map(c => c.k);
+  v.innerHTML = `<div class="card">
+      <div class="row" style="justify-content:space-between"><h2>${rec} de ${total} gravados</h2>
+        ${pending.length ? `<button type="button" class="btn small accent" data-go="learnPending">${icon('rec')}Gravar ${pending.length} pendente${pending.length > 1 ? 's' : ''}</button>` : '<span class="tag ok">Completo</span>'}</div>
+      <div class="progress"><i style="width:${total ? Math.round(rec / total * 100) : 0}%"></i></div>
+      <p>Os comandos base vêm do modelo do controle. Grave cada um com o controle original. Você pode renomear, apagar ou criar os seus.</p>
+    </div>
+    <div class="card">
+      ${total ? `<ul class="list">${p.commands.map(c => {
+        const s = app.signals.get(sigKey(p, c.k));
+        const sub = s ? `${s.p || 'RAW'}${s.b ? ' · ' + s.b + ' bits' : ''}` : 'Não gravado';
+        return `<li><div class="li-main"><b>${esc(c.label)}</b><small><span class="mono">${esc(c.k)}</span> · ${esc(sub)}</small></div>
+          <button type="button" class="icon-btn rec" data-cact="learn" data-k="${esc(c.k)}" aria-label="Gravar ${esc(c.label)}">${icon('rec')}</button>
+          <button type="button" class="icon-btn" data-cact="test" data-k="${esc(c.k)}" aria-label="Testar ${esc(c.label)}" ${s ? '' : 'disabled'}>${icon('play')}</button>
+          <button type="button" class="icon-btn" data-cact="more" data-k="${esc(c.k)}" aria-label="Mais opções">${icon('dots')}</button></li>`;
+      }).join('')}</ul>` : '<p>Este controle ainda não tem comandos.</p>'}
+      <button type="button" class="btn" data-go="addCommand">${icon('plus')}Novo comando</button>
+    </div>`;
+}
 
-// ---------------------------------------------------------------- inicialização
+function openCommandMenu(p, k) {
+  if (!requireLink()) return;
+  const c = p.commands.find(x => x.k === k); if (!c) return;
+  const uses = p.layout.reduce((n, s) => n + s.items.filter(it => ['cmd', 'up', 'down', 'left', 'right', 'ok'].some(f => it[f] === k)).length, 0);
+  openSheet(`<h2>${esc(c.label)}</h2>
+    <label class="field">Nome<input id="fName" type="text" maxlength="30" value="${esc(c.label)}"></label>
+    <p class="hint">Identificador <span class="mono">${esc(k)}</span> · usado em ${uses} botão${uses === 1 ? '' : 'es'} da tela.</p>`, [
+    { label: 'Apagar', cls: 'danger', act: async () => {
+      const ok = await confirmSheet('Apagar comando?', `“${esc(c.label)}” e o sinal gravado serão apagados. Os botões que usam este comando ficam sem comando.`, 'Apagar', true);
+      if (ok) { deleteCommand(p, k); renderCurrent(); }
+    } },
+    { label: 'Salvar', cls: 'primary', act: () => {
+      const name = $('#fName').value.trim(); if (!name) return toast('O nome não pode ficar vazio', 'err');
+      c.label = name; saveProfile(p); closeSheet(); renderCurrent();
+    } },
+  ]);
+}
+
+function openAddCommand(p) {
+  if (!requireLink()) return;
+  openSheet(`<h2>Novo comando</h2>
+    <label class="field">Nome<input id="fName" type="text" maxlength="30" placeholder="Ex.: Frio 23°, Netflix, Número 1"></label>
+    <label class="switch">Adicionar um botão na tela<input id="fBtn" type="checkbox" checked></label>`, [
+    { label: 'Cancelar', act: closeSheet },
+    { label: 'Criar e gravar', cls: 'primary', act: () => {
+      const name = $('#fName').value.trim(); if (!name) return toast('Dê um nome ao comando', 'err');
+      const k = addCommand(p, name);
+      if ($('#fBtn').checked) {
+        if (!p.layout.length) p.layout.push({ title: 'Botões', items: [] });
+        p.layout[p.layout.length - 1].items.push(B(k, '', 'star', 'default', 1));
+      }
+      saveProfile(p); closeSheet(); renderCurrent();
+      startLearn(p, [k]);
+    } },
+  ], { onMount: r => $('#fName', r).focus() });
+}
+
+// ======================================================================
+// Render: perfis
+// ======================================================================
+function renderProfiles() {
+  const v = $('#view-profiles');
+  v.innerHTML = `<div class="card">
+      <h2>Seus controles</h2>
+      ${app.profiles.length ? `<ul class="list">${app.profiles.map(p => `<li>
+        <span class="li-icon">${icon(p.icon)}</span>
+        <div class="li-main"><b>${esc(p.name)}</b><small>${esc(TEMPLATES[p.type].name)} · ${recordedCount(p)}/${p.commands.length} gravados</small></div>
+        <button type="button" class="btn small" data-pact="open" data-pid="${esc(p.id)}">Abrir</button>
+        <button type="button" class="icon-btn" data-pact="edit" data-pid="${esc(p.id)}" aria-label="Editar ${esc(p.name)}">${icon('edit')}</button></li>`).join('')}</ul>`
+        : '<p>Nenhum controle ainda. Cada controle tem os seus próprios comandos e a sua própria tela.</p>'}
+      <button type="button" class="btn primary" data-go="new">${icon('plus')}Novo controle</button>
+    </div>`;
+}
+
+function openProfileEditor(p) {
+  if (!requireLink()) return;
+  const isNew = !p;
+  const draft = isNew ? { name: '', type: 'ac', icon: TEMPLATES.ac.icon, sendRaw: false } : { name: p.name, type: p.type, icon: p.icon, sendRaw: p.sendRaw };
+  let iconTouched = !isNew;
+  const render = () => {
+    const tpls = isNew ? `<div class="field">Tipo de controle<div class="tpl-grid">${Object.entries(TEMPLATES).map(([k, t]) =>
+      `<button type="button" class="tpl ${draft.type === k ? 'on' : ''}" data-tpl="${k}">${icon(t.icon)}<b>${esc(t.name)}</b><small>${t.commands.length ? t.commands.length + ' comandos base' : esc(t.desc)}</small></button>`).join('')}</div></div>` : '';
+    openSheet(`<h2>${isNew ? 'Novo controle' : 'Editar controle'}</h2>
+      <label class="field">Nome<input id="fName" type="text" maxlength="24" placeholder="Ex.: Ar do quarto" value="${esc(draft.name)}"></label>
+      ${tpls}
+      <div class="field">Ícone<div class="icon-grid">${PICK_ICONS.map(n => `<button type="button" data-icon="${n}" class="${draft.icon === n ? 'on' : ''}" aria-label="${n}">${icon(n)}</button>`).join('')}</div></div>
+      <label class="switch"><span>Enviar como sinal bruto<br><span class="hint">Repete os tempos gravados em vez de recriar o código. Ative se o aparelho não responder aos comandos gravados.</span></span><input id="fRaw" type="checkbox" ${draft.sendRaw ? 'checked' : ''}></label>`,
+    [
+      ...(isNew ? [{ label: 'Cancelar', act: closeSheet }] : [{ label: 'Apagar', cls: 'danger', act: () => deleteProfile(p) }]),
+      { label: isNew ? 'Criar' : 'Salvar', cls: 'primary', act: save },
+    ], {
+      onMount: root => {
+        root.querySelectorAll('[data-tpl]').forEach(b => b.onclick = () => { collect(root); draft.type = b.dataset.tpl; if (!iconTouched) draft.icon = TEMPLATES[draft.type].icon; render(); });
+        root.querySelectorAll('[data-icon]').forEach(b => b.onclick = () => { collect(root); draft.icon = b.dataset.icon; iconTouched = true; render(); });
+      },
+    });
+  };
+  const collect = root => { draft.name = $('#fName', root).value; draft.sendRaw = $('#fRaw', root).checked; };
+  const save = () => {
+    collect($('#sheetIn'));
+    const name = draft.name.trim() || TEMPLATES[draft.type].name;
+    if (isNew) {
+      const np = makeProfile(newProfileId(), name, draft.type, app.profiles.reduce((m, x) => Math.max(m, x.order + 1), 0));
+      np.icon = draft.icon; np.sendRaw = draft.sendRaw;
+      app.profiles.push(np);
+      app.activeId = np.id; store.set('active', np.id);
+      saveProfile(np);
+      closeSheet();
+      toast('Controle criado. Grave os comandos com o controle original.');
+      setView(np.commands.length ? 'commands' : 'remote');
+    } else {
+      Object.assign(p, { name, icon: draft.icon, sendRaw: draft.sendRaw });
+      saveProfile(p); closeSheet(); renderAll();
+    }
+  };
+  render();
+}
+
+async function deleteProfile(p) {
+  const n = recordedCount(p);
+  const ok = await confirmSheet(`Apagar “${p.name}”?`, `O controle, a tela dele e ${n} comando${n === 1 ? '' : 's'} gravado${n === 1 ? '' : 's'} serão apagados do receptor. Não dá para desfazer.`, 'Apagar', true);
+  if (!ok) return;
+  send({ c: 'delProfile', id: p.id });
+  app.profiles = app.profiles.filter(x => x.id !== p.id);
+  if (app.activeId === p.id) app.activeId = app.profiles[0] ? app.profiles[0].id : null;
+  if (!app.link || app.link.kind !== 'demo') cacheNow();
+  renderAll();
+}
+
+// ======================================================================
+// Render: ajustes
+// ======================================================================
+function renderSettings() {
+  const v = $('#view-settings');
+  const d = app.dev, em = d && d.emitter || {};
+  const prefixes = app.profiles.map(p => p.id + '-');
+  const legacy = [...app.signals.keys()].filter(k => k !== QUICK_SLOT && !prefixes.some(px => k.startsWith(px))).sort();
+  const quick = app.signals.get(QUICK_SLOT);
+  const theme = store.get('theme', 'system');
+  const noBt = !deviceHosted && !navigator.bluetooth;
+  const ir = app.lastIr;
+  v.innerHTML = `
+    ${noBt ? `<div class="banner"><b>Este navegador não tem Web Bluetooth</b>Use o Chrome no Android, ou o app Bluefy no iPhone. Com o receptor ESP32-S2, conecte-se à rede Wi-Fi do receptor e abra http://192.168.4.1.</div>` : ''}
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Receptor</h2>
+        ${app.link ? `<button type="button" class="btn small" data-go="disconnect">Desconectar</button>` : `<button type="button" class="btn small primary" data-go="connect">${icon(deviceHosted ? 'wifi' : 'bt')}Conectar</button>`}</div>
+      <dl class="kv"><dt>Conexão</dt><dd>${app.link ? esc(app.link.name) : 'desconectado'}</dd><dt>Firmware</dt><dd class="mono">${esc(d ? d.fw : '—')}</dd></dl>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Emissor IR</h2>
+        <span class="tag ${em.online ? 'ok' : 'pend'}">${!d ? '—' : em.online ? 'Online' : em.paired ? 'Offline' : 'Não pareado'}</span></div>
+      <dl class="kv"><dt>MAC</dt><dd class="mono">${esc(em.mac || '—')}</dd><dt>Firmware</dt><dd class="mono">${esc(em.fw || '—')}</dd></dl>
+      <div class="row"><button type="button" class="btn grow" data-go="ping" ${app.link ? '' : 'disabled'}>${icon('signal')}Testar emissor</button>
+        <button type="button" class="btn danger grow" data-go="unpair" ${app.link ? '' : 'disabled'}>Esquecer emissor</button></div>
+      <p>Ao esquecer, o receptor pareia com o próximo emissor que ligar.</p>
+    </div>
+    <div class="card">
+      <h2>Último sinal recebido</h2>
+      <p>Aperte qualquer botão de um controle apontado para o receptor.</p>
+      <p class="mono" style="color:var(--text); overflow-wrap:anywhere">${ir ? `${esc(ir.proto)} · ${ir.bits} bits · ${esc(ir.hex)}` : '—'}</p>
+    </div>
+    <div class="card">
+      <h2>Botões físicos do receptor</h2>
+      <p>GRAVAR guarda um sinal no espaço rápido. ENVIAR repete esse sinal.</p>
+      <div class="row"><span class="grow">${quick ? `Sinal rápido: <span class="mono">${esc(quick.p || 'RAW')}${quick.b ? ' · ' + quick.b + ' bits' : ''}</span>` : 'Nenhum sinal rápido gravado'}</span>
+        ${quick ? `<button type="button" class="btn small" data-go="sendQuick">${icon('play')}Testar</button>` : ''}</div>
+    </div>
+    ${legacy.length ? `<div class="card"><h2>Sinais sem controle</h2><p>Sinais gravados que não pertencem a nenhum controle (por exemplo, da versão anterior).</p>
+      <ul class="list">${legacy.map(k => { const s = app.signals.get(k) || {}; return `<li><div class="li-main"><b class="mono">${esc(k)}</b><small>${esc(s.p || 'RAW')}${s.b ? ' · ' + s.b + ' bits' : ''}</small></div>
+        <button type="button" class="icon-btn" data-legacy="send" data-k="${esc(k)}" aria-label="Enviar">${icon('play')}</button>
+        <button type="button" class="icon-btn" data-legacy="del" data-k="${esc(k)}" aria-label="Apagar">${icon('trash')}</button></li>`; }).join('')}</ul></div>` : ''}
+    <div class="card">
+      <h2>Aparência</h2>
+      <div class="seg">${[['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Escuro']].map(([k, l]) => `<button type="button" data-theme-set="${k}" class="${theme === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    </div>
+    <div class="card">
+      <h2>Modo demonstração</h2>
+      <p>Simula o receptor com dois controles de exemplo, para conhecer a página sem hardware.</p>
+      <button type="button" class="btn" data-go="demo" ${app.link && app.link.kind !== 'demo' ? 'disabled' : ''}>${app.link && app.link.kind === 'demo' ? 'Sair da demonstração' : 'Abrir demonstração'}</button>
+    </div>`;
+}
+
+function applyTheme() {
+  const t = store.get('theme', 'system');
+  if (t === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+}
+
+// ======================================================================
+// Render geral e eventos
+// ======================================================================
+function renderCurrent() {
+  if (app.view === 'remote') renderRemote();
+  else if (app.view === 'commands') renderCommands();
+  else if (app.view === 'profiles') renderProfiles();
+  else renderSettings();
+}
+function renderAll() { renderHeader(); renderCurrent(); }
+
+function go(what) {
+  const p = active();
+  switch (what) {
+    case 'new': setView('profiles'); openProfileEditor(null); break;
+    case 'connect': connect(deviceHosted ? 'http' : 'ble'); break;
+    case 'disconnect': disconnect(); break;
+    case 'demo': if (app.link && app.link.kind === 'demo') disconnect(); else connect('demo'); break;
+    case 'edit': if (requireLink()) { app.editing = true; renderRemote(); } break;
+    case 'doneEdit': app.editing = false; renderRemote(); break;
+    case 'addSection': p.layout.push({ title: 'Nova seção', items: [] }); saveProfile(p); renderRemote(); break;
+    case 'learnPending': startLearn(p, p.commands.filter(c => !hasSig(p, c.k)).map(c => c.k)); break;
+    case 'addCommand': openAddCommand(p); break;
+    case 'ping': send({ c: 'ping' }) && toast('Testando o emissor…'); break;
+    case 'unpair': confirmSheet('Esquecer o emissor?', 'O receptor vai parear com o próximo emissor que ligar.', 'Esquecer', true).then(ok => ok && send({ c: 'unpair' })); break;
+    case 'sendQuick': send({ c: 'send', key: QUICK_SLOT }); break;
+  }
+}
+
 function setup() {
-  setupRemote();
-  renderLearnFunc();
-  renderSignals();
-  renderMap();
+  document.querySelectorAll('[data-ic]').forEach(e => e.innerHTML = icon(e.dataset.ic));
+  applyTheme();
 
-  document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
-    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('active', x === b));
-    document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
-    if (b.dataset.tab === 'config' && app.link && !app.protocols.length) send({ c: 'protocols' });
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => setView(t.dataset.view));
+  $('#connPill').onclick = () => app.link ? setView('settings') : go('connect');
+
+  $('#chips').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.new) return go('new');
+    app.activeId = b.dataset.pid; store.set('active', app.activeId); app.editing = false; renderAll();
+  };
+
+  document.querySelector('main').addEventListener('click', e => {
+    const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
+    const p = active();
+
+    // Controle
+    if (e.target.closest('#view-remote')) {
+      if (app.editing) {
+        const add = e.target.closest('[data-add]'); if (add) return openItemEditor(+add.dataset.add, null);
+        const sm = e.target.closest('[data-smove]');
+        if (sm) { const [si, dir] = sm.dataset.smove.split(':').map(Number); const j = si + dir; [p.layout[si], p.layout[j]] = [p.layout[j], p.layout[si]]; saveProfile(p); return renderRemote(); }
+        const sd = e.target.closest('[data-sdel]');
+        if (sd) {
+          const si = +sd.dataset.sdel, n = p.layout[si].items.length;
+          if (!n) { p.layout.splice(si, 1); saveProfile(p); return renderRemote(); }
+          return confirmSheet('Apagar seção?', `A seção e os ${n} botões dela saem da tela. Os comandos gravados continuam salvos.`, 'Apagar', true)
+            .then(ok => { if (ok) { p.layout.splice(si, 1); saveProfile(p); renderRemote(); } });
+        }
+        const it = e.target.closest('[data-s][data-i]'); if (it) return openItemEditor(+it.dataset.s, +it.dataset.i);
+        return;
+      }
+      const c = e.target.closest('[data-cmd]'); if (c) return press(c.dataset.cmd, c);
+    }
+
+    // Comandos
+    const ca = e.target.closest('[data-cact]');
+    if (ca) {
+      const k = ca.dataset.k;
+      if (ca.dataset.cact === 'learn') startLearn(p, [k]);
+      else if (ca.dataset.cact === 'test') send({ c: 'send', key: sigKey(p, k), raw: !!p.sendRaw });
+      else openCommandMenu(p, k);
+      return;
+    }
+
+    // Perfis
+    const pa = e.target.closest('[data-pact]');
+    if (pa) {
+      const target = app.profiles.find(x => x.id === pa.dataset.pid);
+      if (pa.dataset.pact === 'open') { app.activeId = target.id; store.set('active', target.id); setView('remote'); }
+      else openProfileEditor(target);
+      return;
+    }
+
+    // Ajustes
+    const lg = e.target.closest('[data-legacy]');
+    if (lg) {
+      if (lg.dataset.legacy === 'send') send({ c: 'send', key: lg.dataset.k });
+      else confirmSheet('Apagar sinal?', `O sinal <span class="mono">${esc(lg.dataset.k)}</span> será apagado do receptor.`, 'Apagar', true).then(ok => ok && send({ c: 'del', key: lg.dataset.k }));
+      return;
+    }
+    const th = e.target.closest('[data-theme-set]');
+    if (th) { store.set('theme', th.dataset.themeSet); applyTheme(); renderSettings(); }
   });
 
-  $('#btnConnect').onclick = () => app.link ? disconnect() : connect(deviceHosted ? 'http' : 'ble');
-  $('#btnDemo').onclick = () => app.link instanceof DemoLink ? disconnect() : connect('demo');
+  // Nome da seção (modo edição)
+  document.querySelector('main').addEventListener('change', e => {
+    const t = e.target.closest('[data-stitle]'); if (!t) return;
+    const p = active(); p.layout[+t.dataset.stitle].title = t.value.trim(); saveProfile(p);
+  });
 
-  $('#learnFunc').onchange = e => { if (e.target.value) $('#learnName').value = e.target.value; };
-  $('#learnName').oninput = e => {
-    const clean = sanitizeKey(e.target.value);
-    if (clean !== e.target.value) e.target.value = clean;
-  };
-  $('#btnLearn').onclick = () => learn($('#learnName').value);
-
-  $('#sigList').onclick = e => { const b = e.target.closest('button[data-act]'); if (b) signalAction(b.dataset.act, b.dataset.key); };
-  $('#mapGroups').onclick = e => { const b = e.target.closest('button[data-map]'); if (b) mapAction(b.dataset.map); };
-
-  $('#btnPing').onclick = () => send({ c: 'ping' }) && toast('Testando emissor…');
-  $('#btnUnpair').onclick = async () => {
-    const r = await dialog({ title: 'ESQUECER EMISSOR', body: 'O receptor vai parear com o próximo emissor que aparecer. Continuar?',
-      buttons: [{ label: 'Cancelar', value: false }, { label: 'Esquecer', value: true, cls: 'pink' }] });
-    if (r.value) send({ c: 'unpair' });
-  };
-  $('#btnModeProto').onclick = () => send({ c: 'setMode', learned: false });
-  $('#btnModeLearned').onclick = () => send({ c: 'setMode', learned: true });
-  $('#btnPowerAbs').onclick = () => send({ c: 'setPowerAbs', on: true });
-  $('#btnPowerToggle').onclick = () => send({ c: 'setPowerAbs', on: false });
-  $('#btnSaveProto').onclick = () => {
-    const model = parseInt($('#protoModel').value, 10);
-    send({ c: 'setProto', id: parseInt($('#protoSelect').value, 10), model: isNaN(model) ? -1 : model }) && toast('Protocolo salvo');
-  };
-  $('#btnReloadProto').onclick = () => send({ c: 'protocols' });
-  $('#brandSeg').onclick = e => {
-    const b = e.target.closest('button[data-brand]');
-    if (!b) return;
-    brand = b.dataset.brand;
-    localStorage.setItem('brand', brand);
-    brandLastTried = null;
-    renderProtocols();
-  };
-  $('#brandList').onclick = e => {
-    const tryBtn = e.target.closest('button[data-try]');
-    const useBtn = e.target.closest('button[data-use]');
-    const cands = brandCandidates();
-    if (tryBtn) {
-      const c = cands[parseInt(tryBtn.dataset.try, 10)];
-      brandLastTried = c;
-      send({ c: 'tryProto', id: c.p.id, model: c.model, ac: BRAND_TEST_STATE }) && toast('Testando ' + tryBtn.closest('li').querySelector('b').textContent + '…');
-    }
-    if (useBtn) {
-      const c = cands[parseInt(useBtn.dataset.use, 10)];
-      send({ c: 'setProto', id: c.p.id, model: c.model }) && toast('Protocolo configurado!', 'ok');
-    }
-  };
-  $('#btnBrandOff').onclick = () => {
-    if (!brandLastTried) return toast('Teste um protocolo primeiro');
-    send({ c: 'tryProto', id: brandLastTried.p.id, model: brandLastTried.model, ac: { power: false } });
-  };
-
-  // Avisos de compatibilidade
-  const banner = $('#compatBanner');
-  if (deviceHosted) {
-    connect('http');
-  } else if (!navigator.bluetooth) {
-    banner.hidden = false;
-    banner.innerHTML = '<b>SEM WEB BLUETOOTH</b>Este navegador não suporta Bluetooth. Use o Chrome no Android (ou o app Bluefy no iPhone). '
-      + 'Se o seu receptor é o ESP32-S2, conecte-se à rede Wi-Fi <i>ArCondicionado-XXXX</i> e abra http://192.168.4.1. '
-      + 'Para conhecer a página, use o MODO DEMO em CONFIG.';
-  }
+  if (deviceHosted) connect('http');
+  else loadCache();
+  if (!active() && app.profiles[0]) app.activeId = app.profiles[0].id;
   renderAll();
 }
 

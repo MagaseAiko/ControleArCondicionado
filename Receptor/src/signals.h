@@ -25,4 +25,5 @@ bool signalSave(const Signal &sig);
 bool signalLoad(const String &key, Signal &out, bool withRaw = true);
 bool signalRemove(const String &key);
 bool signalRename(const String &from, const String &to);
+int signalRemovePrefix(const String &prefix);  // apaga todos os sinais "prefix*"
 void signalList(const std::function<void(const Signal &)> &cb);  // sem os tempos brutos

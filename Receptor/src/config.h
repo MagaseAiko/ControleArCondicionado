@@ -18,7 +18,7 @@
 #define PIN_LED -1         // LED simples de status, usado quando não há RGB (DevKit V1: GPIO2)
 #endif
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "2.0.0"
 #define DEVICE_NAME "ArCondicionado"
 #define AP_PASSWORD "arcondicionado"   // senha da rede Wi-Fi (modo Wi-Fi), mínimo 8 caracteres
 
@@ -33,7 +33,5 @@
 #define IR_TIMEOUT_MS 50               // controles de ar mandam mensagens longas
 #define IR_MIN_UNKNOWN_LEN 12          // abaixo disso é ruído
 
-// Protocolo de fábrica: Consul CBK12BXNA (Whirlpool). Gravar um botão do
-// controle original troca para o protocolo/modelo detectado.
-#define DEFAULT_AC_PROTOCOL decode_type_t::WHIRLPOOL_AC
-#define DEFAULT_AC_MODEL 2             // whirlpool_ac_remote_model_t: 1 = DG11J1-3A/04, 2 = DG11J1-91
+#define PROFILE_MAX_BYTES 12000        // tamanho máximo de um perfil (JSON)
+#define PROFILES_MAX 24

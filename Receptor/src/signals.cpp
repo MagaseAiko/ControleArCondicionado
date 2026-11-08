@@ -4,7 +4,7 @@
 
 #define SIG_DIR "/s"
 #define SIG_MAGIC 0x31474953  // "SIG1"
-#define SIG_KEY_MAX 24
+#define SIG_KEY_MAX 32
 
 enum : uint8_t { SIG_F_CODE = 1, SIG_F_STATE = 2 };
 
@@ -103,4 +103,14 @@ void signalList(const std::function<void(const Signal &)> &cb) {
     if (readHeader(f, sig)) cb(sig);
     f.close();
   }
+}
+
+int signalRemovePrefix(const String &prefix) {
+  std::vector<String> names;
+  signalList([&](const Signal &s) {
+    if (s.key.startsWith(prefix)) names.push_back(s.key);
+  });
+  int n = 0;
+  for (const String &k : names) n += signalRemove(k) ? 1 : 0;
+  return n;
 }

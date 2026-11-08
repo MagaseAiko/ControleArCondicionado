@@ -8,15 +8,15 @@
 
 #define LINK_CHANNEL 1        // canal Wi-Fi usado pelo ESP-NOW (igual nos dois lados)
 #define LINK_MAGIC 0xA1C0
-#define LINK_VERSION 1
-#define LINK_MAX_STATE 64     // maior estado de protocolo de ar (bytes)
+#define LINK_VERSION 2       // 2: sem controle de ar por protocolo (só sinais gravados)
+#define LINK_MAX_STATE 64     // maior código de protocolo em bytes (ex.: controles de ar)
 #define LINK_RAW_PER_CHUNK 115
 #define LINK_MAX_RAW 1024     // maior sinal bruto (quantidade de tempos)
 
 enum LinkMsgType : uint8_t {
   LINK_HELLO = 1,      // Emissor -> broadcast: "estou aqui"
   LINK_HELLO_ACK = 2,  // Receptor -> Emissor: "te conheço"
-  LINK_AC = 3,         // Receptor -> Emissor: estado completo do ar (IRac)
+  // 3 era LINK_AC (estado do ar via IRac), removido na versão 2
   LINK_CODE = 4,       // Receptor -> Emissor: código de protocolo conhecido
   LINK_RAW = 5,        // Receptor -> Emissor: pedaço de sinal bruto
   LINK_RESULT = 6,     // Emissor -> Receptor: resultado de um envio
@@ -42,52 +42,6 @@ struct __attribute__((packed)) LinkHello {
   LinkHeader h;
   uint8_t paired;
   char fw[10];
-};
-
-// Bits de LinkAc::flags
-#define AC_F_POWER (1 << 0)
-#define AC_F_CELSIUS (1 << 1)
-#define AC_F_QUIET (1 << 2)
-#define AC_F_TURBO (1 << 3)
-#define AC_F_ECONO (1 << 4)
-#define AC_F_LIGHT (1 << 5)
-#define AC_F_FILTER (1 << 6)
-#define AC_F_CLEAN (1 << 7)
-#define AC_F_BEEP (1 << 8)
-// Estado de energia anterior (definido pelo receptor). Usado pelos protocolos
-// em que o bit de energia é "alternar" (ex.: Whirlpool/Consul): o emissor
-// alterna só quando o estado anterior é diferente do desejado.
-#define AC_F_HAS_PREV (1 << 9)
-#define AC_F_PREV_POWER (1 << 10)
-// Bits 11..14: qual "botão" mudou neste envio (LinkAcCmd). Alguns protocolos
-// (Whirlpool/Consul) mandam essa informação no sinal, como o controle original.
-#define AC_F_CMD_SHIFT 11
-#define AC_F_CMD_MASK (0xF << AC_F_CMD_SHIFT)
-// Whirlpool: bit de energia é o estado (1 = ligado) e não "alternar" (Consul)
-#define AC_F_POWER_ABS (1 << 15)
-enum LinkAcCmd : uint8_t {
-  AC_CMD_NONE = 0,
-  AC_CMD_POWER,
-  AC_CMD_MODE,
-  AC_CMD_TEMP,
-  AC_CMD_FAN,
-  AC_CMD_SWING,
-  AC_CMD_TURBO,
-  AC_CMD_SLEEP,
-  AC_CMD_LIGHT,
-};
-
-struct __attribute__((packed)) LinkAc {
-  LinkHeader h;
-  int16_t protocol;  // decode_type_t
-  int16_t model;
-  int8_t mode;       // stdAc::opmode_t
-  int8_t fan;        // stdAc::fanspeed_t
-  int8_t swingv;     // stdAc::swingv_t
-  int8_t swingh;     // stdAc::swingh_t
-  int16_t degrees10; // temperatura x10
-  int16_t sleep;     // -1 = desligado
-  uint16_t flags;
 };
 
 struct __attribute__((packed)) LinkCode {

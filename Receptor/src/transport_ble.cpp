@@ -48,7 +48,7 @@ class RxCallbacks : public NimBLECharacteristicCallbacks {
       if (nl > 0) inbox.push_back(rxBuffer.substr(0, nl));
       rxBuffer.erase(0, nl + 1);
     }
-    if (rxBuffer.size() > 4096) rxBuffer.clear();  // lixo sem quebra de linha
+    if (rxBuffer.size() > 16384) rxBuffer.clear();  // lixo sem quebra de linha
     xSemaphoreGive(inboxLock);
   }
 };
