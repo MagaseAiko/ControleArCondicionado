@@ -219,8 +219,8 @@ dialog.sheet::backdrop { background: rgb(8 6 14 / .5); }
 /* ---------- gravação ---------- */
 .learn { display: grid; justify-items: center; gap: 14px; text-align: center; padding-block: 8px; }
 .ring { position: relative; width: 150px; height: 150px; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 8; }
+.ring > svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring > svg circle { fill: none; stroke-width: 8; }
 .ring .bg { stroke: var(--surface-2); }
 .ring .fg { stroke: var(--accent-strong); stroke-linecap: round; transition: stroke-dashoffset .25s linear; }
 .ring .center { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -395,6 +395,7 @@ const COLORS = [
   ['danger', 'Vermelho', 'var(--danger)'], ['success', 'Verde', 'var(--success)'], ['info', 'Azul', 'var(--info)'],
 ];
 const QUICK_SLOT = 'rapido';
+const sigSummary = s => `${s.p || 'RAW'}${s.b ? ' · ' + s.b + ' bits' : ''}${s.f > 1 ? ' · ' + s.f + ' quadros' : ''}`;
 
 // ======================================================================
 // Transportes: BLE (Web Bluetooth), HTTP (página servida pelo ESP32-S2) e demo
@@ -517,14 +518,16 @@ class DemoLink {
           if (Math.random() < .12) { this.emit({ t: 'learnTimeout' }); this.status(); return; }
           const protos = [['NEC', 32, 67], ['SAMSUNG', 32, 67], ['WHIRLPOOL_AC', 168, 343], ['RAW', 0, 211]];
           const [p, b, n] = protos[Math.floor(Math.random() * protos.length)];
-          this.sigs.set(o.key, { p, b, n, code: p !== 'RAW' });
-          this.emit({ t: 'ir', proto: p, bits: b, hex: 'DEMO' });
-          this.emit({ t: 'learned', key: o.key, proto: p, bits: b, n });
+          const f = Math.random() < .35 ? 2 : 1;
+          const frames = Array.from({ length: f }, (_, i) => ({ p, b, n, g: i ? 40 + Math.round(Math.random() * 80) : 0 }));
+          this.sigs.set(o.key, { p, b, n: n * f, code: p !== 'RAW', f });
+          this.emit({ t: 'learned', key: o.key, proto: p, bits: b, n: n * f, f, frames });
           this.signals(); this.status();
         }, 1600 + Math.random() * 1400);
         break;
       case 'learnCancel': clearTimeout(this.learnTimer); this.learning = { active: false, key: '', left: 0 }; this.status(); break;
       case 'del': this.sigs.delete(o.key); this.signals(); break;
+      case 'trimFrames': { const v = this.sigs.get(o.key); if (v && v.f > o.n) { v.n = Math.round(v.n / v.f * o.n); v.f = o.n; } this.signals(); break; }
       case 'rename': { const v = this.sigs.get(o.from); if (v) { this.sigs.delete(o.from); this.sigs.set(o.to, v); } this.signals(); break; }
       case 'saveProfile': this.profiles.set(o.id, clone(o.data)); this.emit({ t: 'profileSaved', id: o.id }); break;
       case 'delProfile':
@@ -878,6 +881,7 @@ function renderLearn() {
   const howTo = tm
     ? `No controle original, aperte o botão que deixa o ar em ${esc(label)} (por exemplo, deixe um passo abaixo e aperte + uma vez).`
     : 'Aponte o controle original para o receptor e aperte o botão uma vez.';
+  const multiNote = ' Se o controle manda mais de um sinal, a gravação espera todos chegarem.';
   const step = L.keys.length > 1 ? `<div class="eyebrow">${L.idx + 1} de ${L.keys.length} · ${esc(cur.p.name)}</div>` : `<div class="eyebrow">${esc(cur.p.name)}</div>`;
   const hasNext = L.idx < L.keys.length - 1;
   const nextLabel = hasNext ? cmdLabel(cur.p, L.keys[L.idx + 1]) : '';
@@ -887,7 +891,7 @@ function renderLearn() {
       <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
         <div class="center pulse">${icon('remote')}</div></div>
       <h2>${tm ? 'Gravar ' + esc(label) : 'Aperte “' + esc(label) + '”'}</h2>
-      <p>${howTo} <span id="ringSecs" class="mono"></span></p></div>`;
+      <p>${howTo}${multiNote} <span id="ringSecs" class="mono"></span></p></div>`;
     actions = [{ label: 'Cancelar', act: () => closeLearn(true) }];
   } else if (L.phase === 'ok') {
     const i = L.info || {};
@@ -895,7 +899,10 @@ function renderLearn() {
       <div class="ring"><svg viewBox="0 0 150 150"><circle class="bg" cx="75" cy="75" r="66"/><circle class="fg" id="ringFg" cx="75" cy="75" r="66"/></svg>
         <div class="center">${icon('check')}</div></div>
       <h2>“${esc(label)}” gravado</h2>
-      <p class="mono">${esc(i.proto || 'RAW')}${i.bits ? ' · ' + i.bits + ' bits' : ''} · ${i.n || 0} tempos</p></div>`;
+      ${(i.frames || []).length > 1
+        ? `<p>${i.frames.length} sinais seguidos, enviados juntos com os mesmos intervalos:</p>
+           <p class="mono">${i.frames.map((f, n) => (n ? `↳ ${f.g} ms · ` : '') + esc(f.p) + (f.b ? ' · ' + f.b + ' bits' : '')).join('<br>')}</p>`
+        : `<p class="mono">${esc(i.proto || 'RAW')}${i.bits ? ' · ' + i.bits + ' bits' : ''} · ${i.n || 0} tempos</p>`}</div>`;
     actions = [
       { label: 'Testar', icon: 'play', act: () => send({ c: 'send', key: sigKey(cur.p, cur.k), raw: !!cur.p.sendRaw }) },
       { label: 'Regravar', act: () => beginLearnStep() },
@@ -1187,7 +1194,7 @@ function renderCommands() {
     <div class="card">
       ${total ? `<ul class="list">${p.commands.map(c => {
         const s = app.signals.get(sigKey(p, c.k));
-        const sub = s ? `${s.p || 'RAW'}${s.b ? ' · ' + s.b + ' bits' : ''}` : 'Não gravado';
+        const sub = s ? sigSummary(s) : 'Não gravado';
         return `<li><div class="li-main"><b>${esc(c.label)}</b><small><span class="mono">${esc(c.k)}</span> · ${esc(sub)}</small></div>
           <button type="button" class="icon-btn rec" data-cact="learn" data-k="${esc(c.k)}" aria-label="Gravar ${esc(c.label)}">${icon('rec')}</button>
           <button type="button" class="icon-btn" data-cact="test" data-k="${esc(c.k)}" aria-label="Testar ${esc(c.label)}" ${s ? '' : 'disabled'}>${icon('play')}</button>
@@ -1201,9 +1208,14 @@ function openCommandMenu(p, k) {
   if (!requireLink()) return;
   const c = p.commands.find(x => x.k === k); if (!c) return;
   const uses = p.layout.reduce((n, s) => n + s.items.filter(it => ['cmd', 'up', 'down', 'left', 'right', 'ok'].some(f => it[f] === k)).length, 0);
+  const sig = app.signals.get(sigKey(p, k));
+  const frames = sig && sig.f > 1 ? sig.f : 0;
   openSheet(`<h2>${esc(c.label)}</h2>
     <label class="field">Nome<input id="fName" type="text" maxlength="30" value="${esc(c.label)}"></label>
-    <p class="hint">Identificador <span class="mono">${esc(k)}</span> · usado em ${uses} botão${uses === 1 ? '' : 'es'} da tela.</p>`, [
+    <p class="hint">Identificador <span class="mono">${esc(k)}</span> · usado em ${uses} botão${uses === 1 ? '' : 'es'} da tela.</p>
+    ${frames ? `<div class="card" style="background:var(--bg);box-shadow:none;padding:14px">
+      <p>Gravado com <b>${frames} sinais seguidos</b>. O emissor manda todos, com os mesmos intervalos. Se o controle só repetiu o sinal porque o botão ficou apertado, mantenha só o primeiro.</p>
+      <button type="button" class="btn small" id="fTrim">Manter só o primeiro sinal</button></div>` : ''}`, [
     { label: 'Apagar', cls: 'danger', act: async () => {
       const ok = await confirmSheet('Apagar comando?', `“${esc(c.label)}” e o sinal gravado serão apagados. Os botões que usam este comando ficam sem comando.`, 'Apagar', true);
       if (ok) { deleteCommand(p, k); renderCurrent(); }
@@ -1212,7 +1224,7 @@ function openCommandMenu(p, k) {
       const name = $('#fName').value.trim(); if (!name) return toast('O nome não pode ficar vazio', 'err');
       c.label = name; saveProfile(p); closeSheet(); renderCurrent();
     } },
-  ]);
+  ], { onMount: r => { const t = $('#fTrim', r); if (t) t.onclick = () => { send({ c: 'trimFrames', key: sigKey(p, k), n: 1 }); closeSheet(); toast('Mantido só o primeiro sinal'); }; } });
 }
 
 function openAddCommand(p) {
@@ -1379,11 +1391,11 @@ function renderSettings() {
     <div class="card">
       <h2>Botões físicos do receptor</h2>
       <p>GRAVAR guarda um sinal no espaço rápido. ENVIAR repete esse sinal.</p>
-      <div class="row"><span class="grow">${quick ? `Sinal rápido: <span class="mono">${esc(quick.p || 'RAW')}${quick.b ? ' · ' + quick.b + ' bits' : ''}</span>` : 'Nenhum sinal rápido gravado'}</span>
+      <div class="row"><span class="grow">${quick ? `Sinal rápido: <span class="mono">${esc(sigSummary(quick))}</span>` : 'Nenhum sinal rápido gravado'}</span>
         ${quick ? `<button type="button" class="btn small" data-go="sendQuick">${icon('play')}Testar</button>` : ''}</div>
     </div>
     ${legacy.length ? `<div class="card"><h2>Sinais sem controle</h2><p>Sinais gravados que não pertencem a nenhum controle (por exemplo, da versão anterior).</p>
-      <ul class="list">${legacy.map(k => { const s = app.signals.get(k) || {}; return `<li><div class="li-main"><b class="mono">${esc(k)}</b><small>${esc(s.p || 'RAW')}${s.b ? ' · ' + s.b + ' bits' : ''}</small></div>
+      <ul class="list">${legacy.map(k => { const s = app.signals.get(k) || {}; return `<li><div class="li-main"><b class="mono">${esc(k)}</b><small>${esc(sigSummary(s))}</small></div>
         <button type="button" class="icon-btn" data-legacy="send" data-k="${esc(k)}" aria-label="Enviar">${icon('play')}</button>
         <button type="button" class="icon-btn" data-legacy="del" data-k="${esc(k)}" aria-label="Apagar">${icon('trash')}</button></li>`; }).join('')}</ul></div>` : ''}
     <div class="card">

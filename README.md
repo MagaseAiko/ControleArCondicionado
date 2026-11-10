@@ -97,6 +97,8 @@ Na tela, o bloco de temperatura mostra o valor atual com − e +. Tocar no núme
 
 Os perfis e os sinais ficam guardados no **receptor**, então aparecem em qualquer celular que se conectar a ele. O celular também guarda uma cópia para mostrar a tela sem conexão.
 
+**Controles que mandam mais de um sinal por toque:** depois do primeiro sinal, a gravação continua ouvindo. Ela só termina quando o controle fica 0,6 s em silêncio (`LEARN_FRAME_WAIT_MS` em `Receptor/src/config.h`). Todos os sinais ("quadros", até 6) são guardados com o intervalo entre eles. O emissor recebe a sequência inteira e envia os quadros um após o outro, com os mesmos intervalos. Em **Comandos → ⋯** aparece quantos quadros foram gravados. Se o controle só repetiu o sinal porque o botão ficou apertado, use **Manter só o primeiro sinal**.
+
 **Se o aparelho não responder a um comando gravado:** em **Perfis → editar**, ative **Enviar como sinal bruto**. O emissor passa a repetir os tempos gravados em vez de recriar o código do protocolo. **Ajustes → Último sinal recebido** mostra o que o receptor leu de um controle.
 
 Os botões físicos do receptor continuam funcionando: **GRAVAR** guarda um sinal no espaço rápido (`rapido`) e **ENVIAR** repete esse sinal.

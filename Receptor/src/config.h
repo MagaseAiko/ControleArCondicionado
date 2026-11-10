@@ -32,6 +32,7 @@
 #define IR_CAPTURE_BUFFER 1024
 #define IR_TIMEOUT_MS 50               // controles de ar mandam mensagens longas
 #define IR_MIN_UNKNOWN_LEN 12          // abaixo disso é ruído
+#define LEARN_FRAME_WAIT_MS 600        // depois de um quadro, espera esse tempo por outro (controles com 2+ sinais)
 
 #define PROFILE_MAX_BYTES 12000        // tamanho máximo de um perfil (JSON)
 #define PROFILES_MAX 24

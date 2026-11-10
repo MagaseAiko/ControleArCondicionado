@@ -16,7 +16,7 @@
 #define IR_LED_PIN 3
 #endif
 
-#define FW_VERSION "2.0.0"
+#define FW_VERSION "3.0.0"
 #define HELLO_INTERVAL_MS 3000
 #define RX_QUEUE_LEN 12
 
@@ -40,6 +40,7 @@ static uint16_t rawTotal = 0;
 static uint16_t rawReceived = 0;
 static uint16_t rawSeq = 0;
 static uint8_t rawKhz = 38;
+static bool rawIsSeq = false;  // vários quadros (LINK_RAW_SEQ)
 
 static bool paired = false;
 static uint32_t lastHello = 0;
@@ -104,7 +105,20 @@ static void handleCode(RxPacket &p, uint16_t seq) {
   reply(p.mac, seq, ok ? LINK_OK : LINK_ERR_UNSUPPORTED);
 }
 
-static void handleRaw(RxPacket &p, uint16_t seq) {
+// Vários quadros: envia um, espera o silêncio gravado e envia o próximo
+static void sendRawSequence(const uint16_t *buf, uint16_t total, uint8_t khz) {
+  uint16_t start = 0;
+  for (uint16_t i = 0; i < total; i++) {
+    if (buf[i] != LINK_SEQ_MARK) continue;
+    if (i > start) irsend.sendRaw(buf + start, i - start, khz);
+    delay(i + 1 < total ? buf[i + 1] : 0);
+    i++;
+    start = i + 1;
+  }
+  if (start < total) irsend.sendRaw(buf + start, total - start, khz);
+}
+
+static void handleRaw(RxPacket &p, uint16_t seq, bool sequence) {
   const size_t hdr = offsetof(LinkRaw, t);
   if (p.len < hdr) return reply(p.mac, seq, LINK_ERR_BAD_PACKET);
   LinkRaw m;
@@ -116,6 +130,7 @@ static void handleRaw(RxPacket &p, uint16_t seq) {
     rawTotal = m.total;
     rawReceived = 0;
     rawKhz = m.khz ? m.khz : 38;
+    rawIsSeq = sequence;
   }
   if (rawTotal == 0) return;  // sequência já descartada: responde só uma vez
   if (seq != rawSeq || m.offset != rawReceived || m.offset + m.count > rawTotal ||
@@ -127,9 +142,10 @@ static void handleRaw(RxPacket &p, uint16_t seq) {
   rawReceived += m.count;
 
   if (rawReceived == rawTotal) {
-    irsend.sendRaw(rawBuf, rawTotal, rawKhz);
+    if (rawIsSeq) sendRawSequence(rawBuf, rawTotal, rawKhz);
+    else irsend.sendRaw(rawBuf, rawTotal, rawKhz);
     rawTotal = 0;
-    logMsg("Sinal bruto enviado");
+    logMsg(rawIsSeq ? "Sequencia de sinais enviada" : "Sinal bruto enviado");
     reply(p.mac, seq, LINK_OK);
   }
 }
@@ -145,7 +161,8 @@ static void handlePacket(RxPacket &p) {
       break;
     case LINK_PING: reply(p.mac, h.seq, LINK_OK); break;
     case LINK_CODE: handleCode(p, h.seq); break;
-    case LINK_RAW: handleRaw(p, h.seq); break;
+    case LINK_RAW: handleRaw(p, h.seq, false); break;
+    case LINK_RAW_SEQ: handleRaw(p, h.seq, true); break;
   }
 }
 

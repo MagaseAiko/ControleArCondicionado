@@ -12,7 +12,8 @@ void linkOnResult(LinkResultCallback cb);
 
 // Retornam o número de sequência do envio, ou 0 se o emissor não recebeu.
 uint16_t linkSendCode(int16_t protocol, uint16_t bits, bool isState, const uint8_t *data, uint8_t nbytes);
-uint16_t linkSendRaw(const uint16_t *timings, uint16_t count, uint8_t khz);
+// sequence: os tempos são vários quadros separados por LINK_SEQ_MARK (ver link_protocol.h)
+uint16_t linkSendRaw(const uint16_t *timings, uint16_t count, uint8_t khz, bool sequence = false);
 uint16_t linkPing();
 
 bool linkPaired();

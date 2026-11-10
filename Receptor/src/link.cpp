@@ -170,12 +170,12 @@ uint16_t linkSendCode(int16_t protocol, uint16_t bits, bool isState, const uint8
   return sendPacket(emitter, &m, offsetof(LinkCode, data) + nbytes) ? seq : 0;
 }
 
-uint16_t linkSendRaw(const uint16_t *timings, uint16_t count, uint8_t khz) {
+uint16_t linkSendRaw(const uint16_t *timings, uint16_t count, uint8_t khz, bool sequence) {
   if (!paired || count == 0 || count > LINK_MAX_RAW) return 0;
   const uint16_t seq = newSeq();
   for (uint16_t offset = 0; offset < count;) {
     LinkRaw m;
-    linkInitHeader(m.h, LINK_RAW, seq);
+    linkInitHeader(m.h, sequence ? LINK_RAW_SEQ : LINK_RAW, seq);
     const uint8_t n = min<uint16_t>(LINK_RAW_PER_CHUNK, count - offset);
     m.total = count;
     m.offset = offset;

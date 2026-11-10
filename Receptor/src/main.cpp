@@ -32,6 +32,9 @@ struct Learning {
   bool active = false;
   String key;
   uint32_t startedAt = 0;
+  std::vector<SignalFrame> frames;  // quadros recebidos até agora
+  uint32_t lastFrameAt = 0;
+  uint32_t rawTotal = 0;            // tempos somados (com os separadores)
 };
 static Learning learning;
 
@@ -150,10 +153,12 @@ static void sendSignals() {
   signalList([&](const Signal &s) {
     JsonObject o = list.add<JsonObject>();
     o["k"] = s.key;
-    o["p"] = s.hasCode ? protoName(s.protocol) : String("RAW");
-    o["b"] = s.bits;
-    o["n"] = s.rawLen;
-    o["code"] = s.hasCode;
+    const SignalFrame &f = s.frames[0];
+    o["p"] = f.hasCode ? protoName(f.protocol) : String("RAW");
+    o["b"] = f.bits;
+    o["n"] = s.rawTotal();
+    o["code"] = f.hasCode;
+    o["f"] = s.frames.size();
   });
   sendJson(d);
 }
@@ -212,8 +217,22 @@ static void queueSignal(const String &key, bool forceRaw = false) {
   queueJob(job);
 }
 
+// Um quadro: LINK_RAW. Vários: LINK_RAW_SEQ, e o emissor respeita os intervalos.
 static uint16_t sendSignalRaw(const Signal &sig) {
-  return sig.raw.empty() ? 0 : linkSendRaw(sig.raw.data(), sig.raw.size(), 38);
+  if (sig.frames.size() == 1) {
+    const SignalFrame &f = sig.frames[0];
+    return f.raw.empty() ? 0 : linkSendRaw(f.raw.data(), f.raw.size(), 38);
+  }
+  std::vector<uint16_t> seq;
+  for (size_t i = 0; i < sig.frames.size(); i++) {
+    if (i) {
+      seq.push_back(LINK_SEQ_MARK);
+      seq.push_back(sig.frames[i].gapMs);
+    }
+    seq.insert(seq.end(), sig.frames[i].raw.begin(), sig.frames[i].raw.end());
+  }
+  if (seq.size() > LINK_MAX_RAW) return 0;
+  return linkSendRaw(seq.data(), seq.size(), 38, true);
 }
 
 static void startJob(const Job &job) {
@@ -228,8 +247,10 @@ static void startJob(const Job &job) {
         lastJobDone = millis();
         return;
       }
-      if (sig.hasCode && !(job.forceRaw && !sig.raw.empty())) {
-        seq = linkSendCode(sig.protocol, sig.bits, sig.isState, sig.data, sig.nbytes);
+      // Vários quadros vão sempre como sinal bruto, para manter os intervalos
+      const SignalFrame &f = sig.frames[0];
+      if (sig.frames.size() == 1 && f.hasCode && !(job.forceRaw && !f.raw.empty())) {
+        seq = linkSendCode(f.protocol, f.bits, f.isState, f.data, f.nbytes);
         usedCode = true;
       } else {
         seq = sendSignalRaw(sig);
@@ -293,12 +314,15 @@ static void startLearning(const String &rawKey) {
   learning.active = true;
   learning.key = key;
   learning.startedAt = millis();
+  learning.frames.clear();
+  learning.rawTotal = 0;
   Serial.println("Gravando sinal: " + key);
   sendStatus();
 }
 
 static void stopLearning() {
   learning.active = false;
+  learning.frames.clear();
   sendStatus();
 }
 
@@ -325,65 +349,107 @@ static void reportIr() {
   Serial.printf("IR: %s %d bits %s\n", d["proto"].as<const char *>(), results.bits, d["hex"].as<const char *>());
 }
 
-static void finishLearning() {
-  if (results.overflow) {
-    notifyError("Sinal longo demais para o buffer");
-    stopLearning();
-    return;
-  }
-  if (results.repeat) return;  // código de repetição (botão segurado)
+// Converte a captura atual em um quadro (código decodificado + tempos brutos)
+static void frameFromResults(SignalFrame &fr) {
   const decode_type_t type = results.decode_type;
-  if (type == decode_type_t::UNKNOWN && results.rawlen < IR_MIN_UNKNOWN_LEN) return;  // ruído
-
-  Signal sig;
-  sig.key = learning.key;
-  sig.protocol = (int16_t)type;
-  sig.bits = results.bits;
+  fr.protocol = (int16_t)type;
+  fr.bits = results.bits;
   if (type != decode_type_t::UNKNOWN) {
-    sig.hasCode = true;
+    fr.hasCode = true;
     if (hasACState(type)) {
-      sig.isState = true;
-      sig.nbytes = min<uint16_t>(results.bits / 8, LINK_MAX_STATE);
-      memcpy(sig.data, results.state, sig.nbytes);
+      fr.isState = true;
+      fr.nbytes = min<uint16_t>(results.bits / 8, LINK_MAX_STATE);
+      memcpy(fr.data, results.state, fr.nbytes);
     } else {
-      sig.isState = false;
-      sig.nbytes = 8;
-      for (int i = 0; i < 8; i++) sig.data[i] = (results.value >> (8 * i)) & 0xFF;
+      fr.isState = false;
+      fr.nbytes = 8;
+      for (int i = 0; i < 8; i++) fr.data[i] = (results.value >> (8 * i)) & 0xFF;
     }
   }
   uint16_t *raw = resultToRawArray(&results);
   const uint16_t rawLen = getCorrectedRawLength(&results);
   if (raw) {
-    sig.raw.assign(raw, raw + min<uint16_t>(rawLen, LINK_MAX_RAW));
+    fr.raw.assign(raw, raw + min<uint16_t>(rawLen, IR_CAPTURE_BUFFER));
     delete[] raw;
   }
+  fr.rawLen = fr.raw.size();
+}
 
+static void finishLearning() {
+  Signal sig;
+  sig.key = learning.key;
+  sig.frames = std::move(learning.frames);
   learning.active = false;
+  learning.frames.clear();
+  if (sig.frames.empty()) return sendStatus();
   if (!signalSave(sig)) {
     notifyError("Falha ao salvar o sinal");
     sendStatus();
     return;
   }
 
-  Serial.printf("Sinal \"%s\" gravado: %s, %d bits, %d tempos\n", sig.key.c_str(), protoName(sig.protocol).c_str(),
-                sig.bits, (int)sig.raw.size());
+  const SignalFrame &first = sig.frames[0];
+  Serial.printf("Sinal \"%s\" gravado: %d quadro(s), %s, %d bits, %u tempos\n", sig.key.c_str(), (int)sig.frames.size(),
+                protoName(first.protocol).c_str(), first.bits, (unsigned)sig.rawTotal());
   JsonDocument d;
   d["t"] = "learned";
   d["key"] = sig.key;
-  d["proto"] = sig.hasCode ? protoName(sig.protocol) : String("RAW");
-  d["bits"] = sig.bits;
-  d["n"] = sig.raw.size();
+  d["proto"] = first.hasCode ? protoName(first.protocol) : String("RAW");
+  d["bits"] = first.bits;
+  d["n"] = sig.rawTotal();
+  d["f"] = sig.frames.size();
+  JsonArray frames = d["frames"].to<JsonArray>();
+  for (const SignalFrame &fr : sig.frames) {
+    JsonObject o = frames.add<JsonObject>();
+    o["p"] = fr.hasCode ? protoName(fr.protocol) : String("RAW");
+    o["b"] = fr.bits;
+    o["n"] = fr.rawLen;
+    o["g"] = fr.gapMs;
+  }
   sendJson(d);
   ledFlash(COLOR_OK, 600);
   sendSignals();
   sendStatus();
 }
 
+// Um quadro recebido durante a gravação. A gravação só termina quando o
+// controle fica em silêncio por LEARN_FRAME_WAIT_MS (pega os sinais seguidos).
+static void captureLearnFrame() {
+  if (results.overflow) {
+    notifyError("Sinal longo demais para o buffer");
+    stopLearning();
+    return;
+  }
+  if (results.repeat) return;  // código de repetição (botão segurado)
+  if (results.decode_type == decode_type_t::UNKNOWN && results.rawlen < IR_MIN_UNKNOWN_LEN) return;  // ruído
+
+  SignalFrame fr;
+  frameFromResults(fr);
+  if (fr.raw.empty()) return;
+  const uint32_t now = millis();
+  if (!learning.frames.empty()) {
+    // decode() sai IR_TIMEOUT_MS depois do fim de cada quadro: a diferença entre
+    // as duas saídas, menos a duração deste quadro, é o silêncio entre eles.
+    uint32_t durUs = 0;
+    for (uint16_t t : fr.raw) durUs += t;
+    const int32_t gap = (int32_t)(now - learning.lastFrameAt) - (int32_t)(durUs / 1000);
+    fr.gapMs = constrain(gap, IR_TIMEOUT_MS, 60000);
+    if (learning.rawTotal + 2 + fr.raw.size() > LINK_MAX_RAW) return finishLearning();  // não cabe no emissor
+    learning.rawTotal += 2;
+  }
+  learning.rawTotal += fr.raw.size();
+  learning.frames.push_back(std::move(fr));
+  learning.lastFrameAt = now;
+  if (learning.frames.size() >= SIGNAL_MAX_FRAMES) finishLearning();
+}
+
 static void handleIr() {
   if (!irrecv.decode(&results)) return;  // com save_buffer a captura continua sozinha
   const bool ours = pending.active || millis() - lastJobDone < 1500;  // nosso próprio emissor
-  if (!ours) reportIr();
-  if (learning.active) finishLearning();
+  if (ours) return;
+  // Gravando: nada de mensagens BLE aqui, para não perder o próximo quadro
+  if (learning.active) captureLearnFrame();
+  else reportIr();
 }
 
 // ---------------------------------------------------------------- comandos da página
@@ -419,6 +485,17 @@ static void handleMessage(const String &line) {
 
   if (c == "del") {
     if (!signalRemove(signalSanitizeKey(doc["key"] | ""))) notifyError("Nao foi possivel apagar");
+    return sendSignals();
+  }
+
+  // Mantém só os primeiros quadros de um sinal (ex.: o controle repetiu o sinal)
+  if (c == "trimFrames") {
+    const String key = signalSanitizeKey(doc["key"] | "");
+    const int n = doc["n"] | 1;
+    Signal sig;
+    if (n < 1 || !signalLoad(key, sig)) return notifyError("Sinal nao encontrado: " + key);
+    if ((int)sig.frames.size() > n) sig.frames.resize(n);
+    if (!signalSave(sig)) notifyError("Nao foi possivel salvar o sinal");
     return sendSignals();
   }
 
@@ -549,7 +626,9 @@ void loop() {
   handleButtons();
   processJobs();
 
-  if (learning.active && millis() - learning.startedAt > LEARN_TIMEOUT_MS) {
+  if (learning.active && !learning.frames.empty() && millis() - learning.lastFrameAt > LEARN_FRAME_WAIT_MS) {
+    finishLearning();
+  } else if (learning.active && learning.frames.empty() && millis() - learning.startedAt > LEARN_TIMEOUT_MS) {
     learning.active = false;
     JsonDocument d;
     d["t"] = "learnTimeout";

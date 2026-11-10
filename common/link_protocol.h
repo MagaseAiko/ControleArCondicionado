@@ -8,10 +8,13 @@
 
 #define LINK_CHANNEL 1        // canal Wi-Fi usado pelo ESP-NOW (igual nos dois lados)
 #define LINK_MAGIC 0xA1C0
-#define LINK_VERSION 2       // 2: sem controle de ar por protocolo (só sinais gravados)
+#define LINK_VERSION 3       // 3: sinais com vários quadros (LINK_RAW_SEQ)
 #define LINK_MAX_STATE 64     // maior código de protocolo em bytes (ex.: controles de ar)
 #define LINK_RAW_PER_CHUNK 115
-#define LINK_MAX_RAW 1024     // maior sinal bruto (quantidade de tempos)
+#define LINK_MAX_RAW 2048     // maior sinal bruto (quantidade de tempos, somando todos os quadros)
+// Em LINK_RAW_SEQ os quadros vêm em sequência, separados por LINK_SEQ_MARK
+// seguido do silêncio em ms antes do próximo quadro: q1..., 0, gap, q2...
+#define LINK_SEQ_MARK 0
 
 enum LinkMsgType : uint8_t {
   LINK_HELLO = 1,      // Emissor -> broadcast: "estou aqui"
@@ -21,6 +24,7 @@ enum LinkMsgType : uint8_t {
   LINK_RAW = 5,        // Receptor -> Emissor: pedaço de sinal bruto
   LINK_RESULT = 6,     // Emissor -> Receptor: resultado de um envio
   LINK_PING = 7,       // Receptor -> Emissor: teste de comunicação
+  LINK_RAW_SEQ = 8,    // Receptor -> Emissor: pedaço de vários quadros brutos seguidos
 };
 
 enum LinkResultCode : uint8_t {
